@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load omnitech_extras %}
+
+{% block title %}Carrito - OmniTech{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="header-content">
+        <h1>Tu Carrito</h1>
+        <p>{% if cantidad_items %}{{ cantidad_items }} producto{% if cantidad_items > 1 %}s{% endif %}{% else %}Tu carrito está vacío{% endif %}</p>
+    </div>
+</section>
+
+<section class="cart-section">
+    {% if carrito %}
+    <div class="cart-container">
+        <div class="cart-items">
+            {% for item in carrito %}
+            <article class="cart-item glass-card" data-id="{{ item.id }}" data-tipo="{{ item.tipo }}">
+                <div class="item-image">
+                    <img src="{{ item.imagen }}" alt="{{ item.nombre }}">
+                </div>
+                <div class="item-details">
+                    <span class="item-type {% if item.tipo == 'digital' %}software{% endif %}">
+                        {% if item.tipo == 'digital' %}Software{% else %}Hardware{% endif %}
+                    </span>
+                    <h3>{{ item.nombre }}</h3>
+                    <p class="item-price">{{ item.precio|clp_price }} c/u</p>
+                </div>
+                <div class="item-quantity">
+                    {% if item.tipo == 'fisico' %}
+                    <button class="qty-btn" onclick="actualizarCantidad({{ item.id }}, '{{ item.tipo }}', {{ item.cantidad }} - 1)">-</button>
+                    <span class="qty-value">{{ item.cantidad }}</span>
+                    <button class="qty-btn" onclick="actualizarCantidad({{ item.id }}, '{{ item.tipo }}', {{ item.cantidad }} + 1)">+</button>
+                    {% else %}
+                    <span class="qty-badge">Digital</span>
+                    {% endif %}
+                </div>
+                <div class="item-subtotal">
+                    <span class="subtotal-label">Subtotal</span>
+                    <span class="subtotal-value">{{ item.subtotal|clp_price }}</span>
+                </div>
+                <button class="item-remove" onclick="eliminarItem({{ item.id }}, '{{ item.tipo }}')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </article>
+            {% endfor %}
+        </div>
+        
+        <aside class="cart-summary glass-card">
+            <h3>Resumen del Pedido</h3>
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span id="summarySubtotal">{{ subtotal|clp_price }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Envío</span>
+                <span id="summaryEnvio">
+                    {% if costo_envio > 0 %}
+                    {{ costo_envio|clp_price }}
+                    {% else %}
+                    <span class="free-shipping">Gratis</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-row total">
+                <span>Total</span>
+                <span id="summaryTotal">{{ total|clp_price }}</span>
+            </div>
+            <a href="{% url 'checkout' %}" class="btn-checkout">Proceder al Pago</a>
+            <button class="btn-vaciar" onclick="vaciarCarrito()">Vaciar Carrito</button>
+        </aside>
+    </div>
+    {% else %}
+    <div class="empty-cart glass-card">
+        <div class="empty-icon">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+        </div>
+        <h2>Tu carrito está vacío</h2>
+        <p>Descubre nuestros productos y añade lo que necesites.</p>
+        <a href="{% url 'productos' %}" class="btn-primary btn-large">Explorar Productos</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

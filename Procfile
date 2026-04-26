@@ -1,0 +1,1 @@
+web: gunicorn omnitech.wsgi --log-file -

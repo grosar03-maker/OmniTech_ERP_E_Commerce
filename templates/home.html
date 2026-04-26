@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load omnitech_extras %}
+
+{% block title %}OmniTech - Tecnología Premium{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+        <h1>El futuro de la tecnología<br><span class="gradient-text">está aquí</span></h1>
+        <p>Descubre hardware de última generación y licencias digitales premium para potenciar tu vida digital.</p>
+        <div class="hero-actions">
+            <a href="{% url 'productos' %}" class="btn-primary btn-large">Explorar Productos</a>
+            <a href="{% url 'productos' %}?tipo=hardware" class="btn-secondary btn-large">Ver Hardware</a>
+        </div>
+    </div>
+    <div class="hero-image">
+        <div class="floating-card glass-card">
+            <img src="https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&h=400&fit=crop" alt="MacBook Pro">
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="features-container">
+        <div class="feature-card glass-card">
+            <div class="feature-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="1" y="3" width="15" height="13" rx="2"/>
+                    <path d="M16 8h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/>
+                    <circle cx="5.5" cy="18" r="2.5"/>
+                    <circle cx="18.5" cy="18" r="2.5"/>
+                </svg>
+            </div>
+            <h3>Envío Gratis</h3>
+            <p>Para compras sobre $100.000 CLP en La Araucanía</p>
+        </div>
+        <div class="feature-card glass-card">
+            <div class="feature-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </div>
+            <h3>Pago Seguro</h3>
+            <p>Transacciones 100% seguras y protegidas</p>
+        </div>
+        <div class="feature-card glass-card">
+            <div class="feature-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </div>
+            <h3>Licencias Originales</h3>
+            <p>Solo productos originales y licenciados</p>
+        </div>
+        <div class="feature-card glass-card">
+            <div class="feature-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+            </div>
+            <h3>Soporte 24/7</h3>
+            <p>Equipo de soporte siempre disponible</p>
+        </div>
+    </div>
+</section>
+
+<section class="products-section">
+    <div class="section-header">
+        <h2>Productos Destacados</h2>
+        <a href="{% url 'productos' %}" class="link-arrow">Ver todos <span>→</span></a>
+    </div>
+    <div class="products-grid">
+        {% for producto in productos_destacados %}
+        <article class="product-card glass-card">
+            <div class="product-badge">Hardware</div>
+            <div class="product-image">
+                <img src="{% if producto.imagen_url %}{{ producto.imagen_url }}{% else %}https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=400&h=300&fit=crop{% endif %}" alt="{{ producto.nombre }}">
+            </div>
+            <div class="product-info">
+                <span class="product-category">{{ producto.categoria }}</span>
+                <h3>{{ producto.nombre }}</h3>
+                <p class="product-description">{{ producto.descripcion|truncatechars:80 }}</p>
+                <div class="product-footer">
+                    <span class="price">{{ producto.precio|clp_price }}</span>
+                    <div class="stock-info">
+                        <span class="stock {% if producto.stock_disponible < producto.umbral_minimo %}low{% endif %}">
+                            {{ producto.stock_disponible }} disponibles
+                        </span>
+                    </div>
+                </div>
+                <button class="btn-add-cart" onclick="agregarAlCarrito({{ producto.id }}, 'fisico')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Agregar al Carrito
+                </button>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="products-section software-section">
+    <div class="section-header">
+        <h2>Licencias Digitales</h2>
+        <a href="{% url 'productos' %}?tipo=software" class="link-arrow">Ver todos <span>→</span></a>
+    </div>
+    <div class="products-grid">
+        {% for licencia in licencias_destacadas %}
+        <article class="product-card glass-card license-card">
+            <div class="product-badge software">Software</div>
+            <div class="product-image">
+                <img src="{% if licencia.imagen_url %}{{ licencia.imagen_url }}{% else %}https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=300&fit=crop{% endif %}" alt="{{ licencia.nombre }}">
+            </div>
+            <div class="product-info">
+                <span class="product-category">{{ licencia.plataforma }}</span>
+                <h3>{{ licencia.nombre }}</h3>
+                <p class="product-description">{{ licencia.descripcion|truncatechars:80 }}</p>
+                <div class="product-footer">
+                    <span class="price">{{ licencia.precio|clp_price }}</span>
+                    <div class="license-type">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                        </svg>
+                        {{ licencia.duracion_dias }} días
+                    </div>
+                </div>
+                <button class="btn-add-cart" onclick="agregarAlCarrito({{ licencia.id }}, 'digital')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Obtener Ahora
+                </button>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="cta-container glass-card">
+        <div class="cta-content">
+            <h2>¿No encuentras lo que buscas?</h2>
+            <p>Contáctanos y te ayudamos a encontrar el producto perfecto para ti.</p>
+            <button class="btn-primary btn-large">Contactar</button>
+        </div>
+    </div>
+</section>
+{% endblock %}

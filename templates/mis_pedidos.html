@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load omnitech_extras %}
+
+{% block title %}Mis Pedidos - OmniTech{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="header-content">
+        <h1>Mis Pedidos</h1>
+        <p>Historial de todas tus compras</p>
+    </div>
+</section>
+
+<section class="orders-section">
+    {% if pedidos %}
+    <div class="orders-list">
+        {% for pedido in pedidos %}
+        <article class="order-card glass-card">
+            <div class="order-header">
+                <div class="order-info">
+                    <span class="order-number">{{ pedido.numero_pedido }}</span>
+                    <span class="order-date">{{ pedido.fecha_creacion|date:"d M Y, H:i" }}</span>
+                </div>
+                <span class="order-status {{ pedido.estado }}">
+                    {{ pedido.get_estado_display }}
+                </span>
+            </div>
+            
+            <div class="order-items-preview">
+                {% for item in pedido.items.all|slice:":3" %}
+                <div class="item-thumb">
+                    {% if item.producto_fisico %}
+                    <img src="https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=100&h=100&fit=crop" alt="">
+                    {% else %}
+                    <img src="https://images.unsplash.com/photo-1626785774573-4b799315345d?w=100&h=100&fit=crop" alt="">
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% if pedido.items.count > 3 %}
+                <div class="more-items">+{{ pedido.items.count|add:"-3" }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="order-footer">
+                <div class="order-total">
+                    <span class="total-label">Total</span>
+                    <span class="total-value">{{ pedido.total|clp_price }}</span>
+                </div>
+                <a href="{% url 'detalle_pedido' pedido.numero_pedido %}" class="btn-view">
+                    Ver Detalle
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-orders glass-card">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <h2>No tienes pedidos aún</h2>
+        <p>Cuando realices una compra, podrás ver el detalle aquí.</p>
+        <a href="{% url 'productos' %}" class="btn-primary">Empezar a Comprar</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

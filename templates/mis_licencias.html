@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load omnitech_extras %}
+
+{% block title %}Mis Licencias - OmniTech{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="header-content">
+        <h1>Mis Licencias</h1>
+        <p>Todas tus licencias digitales adquiridas</p>
+    </div>
+</section>
+
+<section class="licenses-section">
+    {% if licencias %}
+    <div class="licenses-grid">
+        {% for licencia in licencias %}
+        <article class="license-card glass-card">
+            <div class="license-header">
+                <div class="license-platform">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                    {{ licencia.plataforma }}
+                </div>
+                <span class="license-status {{ licencia.estado_licencia }}">
+                    {{ licencia.get_estado_licencia_display }}
+                </span>
+            </div>
+            
+            <h3>{{ licencia.nombre }}</h3>
+            <p class="license-sku">SKU: {{ licencia.sku }}</p>
+            
+            <div class="license-details">
+                <div class="detail">
+                    <span class="label">Duración</span>
+                    <span class="value">{{ licencia.duracion_dias }} días</span>
+                </div>
+                {% if licencia.fecha_asignacion %}
+                <div class="detail">
+                    <span class="label">Activada</span>
+                    <span class="value">{{ licencia.fecha_asignacion|date:"d M Y" }}</span>
+                </div>
+                {% endif %}
+                <div class="detail">
+                    <span class="label">Pedido</span>
+                    <span class="value">{{ licencia.orden_compra.numero_pedido }}</span>
+                </div>
+            </div>
+            
+            {% if licencia.estado_licencia == 'consumida' %}
+            <div class="license-key-container">
+                <label>Tu clave de licencia</label>
+                <div class="license-key">
+                    <code>••••••••••••••••</code>
+                    <button class="btn-reveal" onclick="alert('En producción, esto mostraría la clave desencriptada')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="license-price">
+                <span class="price">{{ licencia.precio|clp_price }}</span>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-licenses glass-card">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <h2>No tienes licencias</h2>
+        <p>Adquiere licencias de software y aparecerán aquí.</p>
+        <a href="{% url 'productos' %}?tipo=software" class="btn-primary">Ver Licencias</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

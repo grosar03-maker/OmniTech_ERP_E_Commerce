@@ -1,0 +1,549 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load omnitech_extras %}
+
+{% block title %}Finalizar Compra - OmniTech{% endblock %}
+
+{% block extra_css %}
+<style>
+.checkout-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+    padding: 40px 20px;
+}
+
+select option {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 10px;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+    background: #7874c6;
+    color: white;
+}
+
+.checkout-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.checkout-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.checkout-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff 0%, #7874c6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+
+.checkout-header p {
+    color: #86868b;
+}
+
+.checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+}
+
+.checkout-form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 28px;
+    backdrop-filter: blur(20px);
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.section-title svg {
+    color: #7874c6;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group.full {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #86868b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 15px;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #7874c6;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(120, 116, 198, 0.2);
+}
+
+.form-input::placeholder {
+    color: #6e6e73;
+}
+
+select.form-input {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 18px;
+    padding-right: 40px;
+}
+
+.order-summary {
+    position: sticky;
+    top: 100px;
+}
+
+.order-summary h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.summary-items {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.summary-item img {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.item-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-qty {
+    font-size: 12px;
+    color: #86868b;
+}
+
+.item-price {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.summary-totals {
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    color: #86868b;
+    font-size: 14px;
+}
+
+.summary-row.total {
+    padding-top: 16px;
+    margin-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.summary-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 8px 0;
+}
+
+.btn-pay {
+    width: 100%;
+    padding: 18px 24px;
+    margin-top: 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-pay:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+.secure-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: #86868b;
+}
+
+.secure-badge svg {
+    color: #4ade80;
+}
+
+.free-shipping-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    margin-top: 16px;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    border-radius: 10px;
+    font-size: 13px;
+    color: #4ade80;
+}
+
+.payment-methods {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.payment-option {
+    flex: 1;
+    cursor: pointer;
+}
+
+.payment-option input {
+    display: none;
+}
+
+.payment-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.payment-option.selected .payment-card {
+    border-color: #7874c6;
+    background: rgba(120, 116, 198, 0.1);
+}
+
+.payment-card svg {
+    color: #86868b;
+}
+
+.payment-card span {
+    font-size: 13px;
+    color: #fff;
+}
+
+.card-form {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.card-form .form-grid {
+    margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+    .checkout-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .order-summary {
+        position: static;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-page">
+    <div class="checkout-container">
+        <div class="checkout-header">
+            <h1>Finalizar Compra</h1>
+            <p>Completa tus datos para procesar el pedido</p>
+        </div>
+        
+        <form method="POST" action="{% url 'crear_sesion_stripe' %}">
+            {% csrf_token %}
+            
+            <div class="checkout-grid">
+                <div class="checkout-form-section">
+                    <div class="glass-card">
+                        <h3 class="section-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Información de Contacto
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Correo electrónico</label>
+                                <input type="email" name="email" class="form-input" 
+                                       value="{{ user.email|default:'' }}" required
+                                       placeholder="tu@correo.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono</label>
+                                <input type="tel" name="telefono" class="form-input" 
+                                       placeholder="+56 9 1234 5678">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card">
+                        <h3 class="section-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            Dirección de Envío
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Región</label>
+                                <select name="region" id="region" class="form-input" required>
+                                    <option value="">Selecciona región</option>
+                                    <option value="La Araucania">La Araucanía (Envío gratis sobre $100.000)</option>
+                                    <option value="Metropolitana">Región Metropolitana de Santiago</option>
+                                    <option value="Valparaiso">Región de Valparaíso</option>
+                                    <option value="Biobio">Región del Biobío</option>
+                                    <option value="Maule">Región del Maule</option>
+                                    <option value="Nuble">Región de Ñuble</option>
+                                    <option value="Los Rios">Región de Los Ríos</option>
+                                    <option value="Los Lagos">Región de Los Lagos</option>
+                                    <option value="Aysen">Región de Aysén</option>
+                                    <option value="Magallanes">Región de Magallanes</option>
+                                    <option value="Antofagasta">Región de Antofagasta</option>
+                                    <option value="Atacama">Región de Atacama</option>
+                                    <option value="Coquimbo">Región de Coquimbo</option>
+                                    <option value="OHiggins">Región del Libertador O'Higgins</option>
+                                    <option value="Arica">Región de Arica y Parinacota</option>
+                                    <option value="Tarapaca">Región de Tarapacá</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Ciudad / Comuna</label>
+                                <select name="ciudad" id="ciudad" class="form-input" required>
+                                    <option value="">Selecciona primero región</option>
+                                </select>
+                            </div>
+                            <div class="form-group full">
+                                <label>Dirección</label>
+                                <input type="text" name="direccion" class="form-input" 
+                                       placeholder="Av. Principal 123, Depto 4B">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card">
+                        <h3 class="section-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="1" y="4" width="22" height="16" rx="2"/>
+                                <line x1="1" y1="10" x2="23" y2="10"/>
+                            </svg>
+                            Método de Pago
+                        </h3>
+                        <div class="payment-methods">
+                            <label class="payment-option selected">
+                                <input type="radio" name="pago" value="stripe" checked>
+                                <div class="payment-card">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                        <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z" fill="#635BFF"/>
+                                    </svg>
+                                    <span>Tarjeta (Stripe)</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <aside class="order-summary glass-card">
+                    <h3>Tu Pedido</h3>
+                    <div class="summary-items">
+                        {% for item in carrito %}
+                        <div class="summary-item">
+                            <img src="{{ item.imagen }}" alt="{{ item.nombre }}">
+                            <div class="item-info">
+                                <span class="item-name">{{ item.nombre }}</span>
+                                <span class="item-qty">Cantidad: {{ item.cantidad }}</span>
+                            </div>
+                            <span class="item-price">{{ item.subtotal|clp_price }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="summary-totals">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span>{{ subtotal|clp_price }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Envío</span>
+                            <span id="costo-envio">{{ costo_envio|clp_price }}</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total</span>
+                            <span id="total">{{ total|clp_price }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if region == 'La Araucanía' %}
+                    <div class="free-shipping-badge">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        ¡Envío gratis por estar en La Araucanía!
+                    </div>
+                    {% endif %}
+                    
+                    <button type="submit" class="btn-pay">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        Pagar con Stripe
+                    </button>
+                    
+                    <div class="secure-badge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        Pago 100% seguro
+                    </div>
+                </aside>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ciudadesPorRegion = {
+        'La Araucania': ['Cañete', 'Carahue', 'Cholchol', 'Cunco', 'Curarrehue', 'Freire', 'Galvarino', 'Gorbea', 'Lautaro', 'Loncoche', 'Melipeuco', 'Nueva Imperial', 'Padre Las Casas', 'Perquenco', 'Pitrufquen', 'Pucón', 'Saavedra', 'Temuco', 'Toledo', 'Traiguén', 'Victoria', 'Villarrica'],
+        'Metropolitana': ['Cerrillos', 'Cerro Navia', 'Colina', 'Conchali', 'El Bosque', 'Estacion Central', 'Huechuraba', 'Independencia', 'La Cisterna', 'La Florida', 'La Granja', 'La Pintana', 'La Reina', 'Las Condes', 'Lo Barnechea', 'Lo Espejo', 'Lo Prado', 'Macul', 'Maipu', 'Nuñoa', 'Pedro Aguirre Cerda', 'Penalolen', 'Providencia', 'Pudahuel', 'Quilicura', 'Quinta Normal', 'Recoleta', 'Renca', 'San Joaquin', 'San Miguel', 'San Ramon', 'Santiago', 'Vitacura'],
+        'Valparaiso': ['Cabildo', 'Calera', 'Los Andes', 'Quillota', 'San Antonio', 'Valparaiso', 'Villa Alemana', 'Vina del Mar'],
+        'Biobio': ['Concepcion', 'Chiguayante', 'San Pedro de la Paz', 'Talcahuano', 'Los Angeles', 'Coronel', 'Penco', 'Tome', 'Lota'],
+        'Maule': ['Talca', 'Curico', 'Linares', 'Cauquenes', 'Constitucion', 'San Javier', 'Parral'],
+        'Nuble': ['Chillan', 'Chillan Viejo', 'San Carlos', 'Yungay', 'Quillon', 'Bulnes', 'San Nicolas'],
+        'Los Rios': ['Valdivia', 'La Union', 'Rio Bueno', 'Panguipulli', 'Mariquina', 'Lanco', 'Mafil', 'Corral'],
+        'Los Lagos': ['Puerto Montt', 'Osorno', 'Castro', 'Ancud', 'Quellon', 'Frutillar', 'Puerto Varas', 'Llanquihue'],
+        'Aysen': ['Coyhaique', 'Aysen', 'Chile Chico', 'Cisnes', 'Guaitecas'],
+        'Magallanes': ['Punta Arenas', 'Puerto Natales', 'Porvenir', 'Cabo de Hornos'],
+        'Antofagasta': ['Antofagasta', 'Calama', 'Tocopilla', 'Maria Elena', 'Mejillones', 'Taltal'],
+        'Atacama': ['Copiapo', 'Caldera', 'Tierra Amarilla', 'Chanaral', 'Vallenar'],
+        'Coquimbo': ['La Serena', 'Coquimbo', 'Ovalle', 'Illapel', 'Vicuna', 'Los Vilos', 'Salamanca'],
+        'OHiggins': ['Rancagua', 'San Fernando', 'Pichilemu', 'Santa Cruz', 'Rengo', 'San Vicente'],
+        'Arica': ['Arica', 'Putre', 'Camarones'],
+        'Tarapaca': ['Iquique', 'Alto Hospicio', 'Pozo Almonte', 'Pica', 'Huara']
+    };
+
+    const regionSelect = document.getElementById('region');
+    const ciudadSelect = document.getElementById('ciudad');
+
+    regionSelect.addEventListener('change', function() {
+        const region = this.value.replace('í', 'i').replace('á', 'a').replace('é', 'e').replace('ó', 'o').replace('ú', 'u').replace('ñ', 'n').replace('ü', 'u').replace("'", '');
+        ciudadSelect.innerHTML = '<option value="">Selecciona ciudad</option>';
+        
+        if (region && ciudadesPorRegion[region]) {
+            ciudadesPorRegion[region].forEach(function(ciudad) {
+                const option = document.createElement('option');
+                option.value = ciudad;
+                option.textContent = ciudad;
+                ciudadSelect.appendChild(option);
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

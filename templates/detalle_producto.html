@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load omnitech_extras %}
+
+{% block title %}{{ producto.nombre }} - OmniTech{% endblock %}
+
+{% block content %}
+<section class="product-detail-section">
+    <div class="product-detail-container">
+        <div class="product-gallery">
+            <div class="main-image glass-card">
+                <img src="{% if producto.imagen_url %}{{ producto.imagen_url }}{% else %}{% if es_fisico %}https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=800&h=600&fit=crop{% else %}https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&h=600&fit=crop{% endif %}{% endif %}" alt="{{ producto.nombre }}">
+            </div>
+        </div>
+        
+        <div class="product-info-detail">
+            <div class="product-meta">
+                <span class="product-badge {% if es_fisico %}hardware{% else %}software{% endif %}">
+                    {% if es_fisico %}Hardware{% else %}Software{% endif %}
+                </span>
+                <span class="product-category">{{ producto.categoria }}</span>
+            </div>
+            
+            <h1>{{ producto.nombre }}</h1>
+            
+            <p class="product-sku">SKU: {{ producto.sku }}</p>
+            
+            <div class="product-price">
+                <span class="price-main">{{ producto.precio|clp_price }}</span>
+                {% if not es_fisico %}
+                <span class="price-period">/ {{ producto.duracion_dias }} días</span>
+                {% endif %}
+            </div>
+            
+            {% if es_fisico %}
+            <div class="stock-status">
+                {% if producto.stock_disponible > producto.umbral_minimo %}
+                <span class="status available">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    {{ producto.stock_disponible }} unidades disponibles
+                </span>
+                {% elif producto.stock_disponible > 0 %}
+                <span class="status low">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    ¡Solo quedan {{ producto.stock_disponible }}!
+                </span>
+                {% else %}
+                <span class="status out">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                    Agotado
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="product-specs glass-card">
+                <h3>Especificaciones</h3>
+                <dl>
+                    <dt>Peso</dt>
+                    <dd>{{ producto.peso }} kg</dd>
+                    <dt>Stock físico</dt>
+                    <dd>{{ producto.stock_fisico }} unidades</dd>
+                    <dt>Umbral mínimo</dt>
+                    <dd>{{ producto.umbral_minimo }} unidades</dd>
+                    {% if producto.proveedor %}
+                    <dt>Proveedor</dt>
+                    <dd>{{ producto.proveedor }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+            {% else %}
+            <div class="license-info glass-card">
+                <h3>Información de la Licencia</h3>
+                <dl>
+                    <dt>Plataforma</dt>
+                    <dd>{{ producto.plataforma }}</dd>
+                    <dt>Duración</dt>
+                    <dd>{{ producto.duracion_dias }} días</dd>
+                    <dt>Estado</dt>
+                    <dd class="status-{{ producto.estado_licencia }}">{{ producto.get_estado_licencia_display }}</dd>
+                </dl>
+            </div>
+            {% endif %}
+            
+            <div class="product-description">
+                <h3>Descripción</h3>
+                <p>{{ producto.descripcion }}</p>
+            </div>
+            
+            <div class="product-actions">
+                {% if es_fisico %}
+                {% if producto.stock_disponible > 0 %}
+                <div class="quantity-selector">
+                    <button class="qty-btn" onclick="decrementQty()">-</button>
+                    <input type="number" id="cantidad" value="1" min="1" max="{{ producto.stock_disponible }}">
+                    <button class="qty-btn" onclick="incrementQty()">+</button>
+                </div>
+                <button class="btn-add-cart-large" onclick="agregarAlCarritoCantidad({{ producto.id }}, 'fisico')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"/>
+                        <circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                    Agregar al Carrito
+                </button>
+                {% else %}
+                <button class="btn-disabled" disabled>Agotado</button>
+                {% endif %}
+                {% else %}
+                <button class="btn-add-cart-large software" onclick="agregarAlCarrito({{ producto.id }}, 'digital')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Obtener Ahora
+                </button>
+                {% endif %}
+            </div>
+            
+            <div class="guarantees">
+                <div class="guarantee-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <span>Pago seguro</span>
+                </div>
+                <div class="guarantee-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <span>Licencia original</span>
+                </div>
+                <div class="guarantee-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span>Entrega inmediata</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function incrementQty() {
+    const input = document.getElementById('cantidad');
+    const max = parseInt(input.max);
+    if (parseInt(input.value) < max) {
+        input.value = parseInt(input.value) + 1;
+    }
+}
+
+function decrementQty() {
+    const input = document.getElementById('cantidad');
+    if (parseInt(input.value) > 1) {
+        input.value = parseInt(input.value) - 1;
+    }
+}
+
+function agregarAlCarritoCantidad(productoId, tipo) {
+    const cantidad = document.getElementById('cantidad').value;
+    agregarAlCarrito(productoId, tipo, parseInt(cantidad));
+}
+</script>
+{% endblock %}
