@@ -37,6 +37,7 @@ MIDDLEWARE = [
 
 if not DEBUG:
     MIDDLEWARE.insert(0, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 ROOT_URLCONF = 'omnitech.urls'
 
