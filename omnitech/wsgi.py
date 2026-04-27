@@ -9,4 +9,4 @@ from whitenoise import WhiteNoise
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omnitech.settings')
 
 application = get_wsgi_application()
-application = WhiteNoise(application, root='/opt/render/project/repo/staticfiles')
+application = WhiteNoise(application, root=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)), 'staticfiles'), prefix='static/')
