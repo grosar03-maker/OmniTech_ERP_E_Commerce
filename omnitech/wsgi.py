@@ -9,4 +9,10 @@ from whitenoise import WhiteNoise
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omnitech.settings')
 
 application = get_wsgi_application()
-application = WhiteNoise(application, root=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)), 'staticfiles'), prefix='static/')
+
+try:
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    static_root = os.path.join(base, 'staticfiles')
+    application = WhiteNoise(application, root=static_root, prefix='static/')
+except Exception:
+    pass
