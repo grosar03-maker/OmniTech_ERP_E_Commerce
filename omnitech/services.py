@@ -3,6 +3,7 @@ Services Layer - OmniTech
 Lógica de negocio centralizada aplicando SOLID y bajo acoplamiento
 """
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db import transaction
@@ -10,9 +11,9 @@ from decimal import Decimal
 import uuid
 
 from .models import (
-    PhysicalProduct, DigitalLicense, Order, OrderItem,
-    OrderState, LicenseState
+    Order, OrderItem, OrderState, LicenseState
 )
+from .factories import ProductFactory
 
 
 # =============================================================================
@@ -62,20 +63,14 @@ class OrderService:
                     precio = Decimal(str(item_data['precio']))
                     subtotal += precio * cantidad
                     
-                    # OCP: Polimorfismo - cada producto sabe cómo procesarse
-                    if tipo == 'fisico':
-                        producto = PhysicalProduct.objects.select_for_update().get(id=producto_id)
-                    else:
-                        producto = DigitalLicense.objects.select_for_update().get(id=producto_id)
-                    
-                    # Aquí se aplica el método polimórfico
+                    # Factory Method + OCP: polimorfismo vía ProductFactory
+                    producto = ProductFactory.obtener_producto_con_lock(tipo, producto_id)
                     producto.procesar_venta(cantidad)
                     
-                    # Crear item de pedido
                     OrderItem.objects.create(
                         pedido=order,
-                        producto_fisico=producto if tipo == 'fisico' else None,
-                        licencia=producto if tipo == 'software' else None,
+                        producto_fisico=producto if ProductFactory.es_tipo_fisico(tipo) else None,
+                        licencia=producto if not ProductFactory.es_tipo_fisico(tipo) else None,
                         cantidad=cantidad,
                         precio_unitario=precio,
                     )
@@ -93,11 +88,51 @@ class OrderService:
             return None, False, str(e)
 
     @staticmethod
+    def crear_pedido_para_stripe(request, carrito, email, region, observaciones):
+        """
+        DIP: Crea un pedido PENDIENTE_PAGO y calcula costo de envío.
+        Reemplaza la lógica directa que estaba en views.py.
+        """
+        import uuid
+        from django.conf import settings
+
+        numero_pedido = f'OT-{uuid.uuid4().hex[:8].upper()}'
+
+        peso_total = sum(
+            item.get('peso', 0) * item['cantidad']
+            for item in carrito
+            if item.get('tipo') == 'fisico'
+        )
+
+        costo_envio = Decimal(str(peso_total * 500)) if peso_total > 0 else Decimal('0')
+
+        if region == 'La Araucanía':
+            subtotal = sum(Decimal(str(item['precio'])) * item['cantidad'] for item in carrito)
+            if subtotal > Decimal(str(settings.SUBSIDIO_MONTO)):
+                costo_envio = Decimal('0')
+
+        order = Order.objects.create(
+            numero_pedido=numero_pedido,
+            usuario=request.user if request.user.is_authenticated else None,
+            email_invitado=email,
+            estado=OrderState.PENDIENTE_PAGO,
+            region_envio=region,
+            observaciones=observaciones,
+            costo_envio=costo_envio,
+        )
+
+        request.session['order_id'] = numero_pedido
+        request.session['carrito_temp'] = carrito
+        request.session.save()
+
+        return order, costo_envio
+
+    @staticmethod
     def calcular_costo_envio(carrito, region):
         """Calcula el costo de envío aplicando RN-04."""
         peso_total = sum(
             item.get('peso', 0) * item['cantidad'] 
-            for item in bootstrap 
+            for item in carrito
             if item.get('tipo') == 'fisico'
         )
         
@@ -105,7 +140,7 @@ class OrderService:
         
         # RN-04: Subsidio La Araucanía
         if region == 'La Araucanía':
-            subtotal = sum(Decimal(str(item['precio'])) * item['cantidad'] for item in bootstrap)
+            subtotal = sum(Decimal(str(item['precio'])) * item['cantidad'] for item in carrito)
             if subtotal > Decimal(str(settings.SUBSIDIO_MONTO)):
                 costo = Decimal('0')
         
@@ -127,7 +162,7 @@ class CartService:
     @staticmethod
     def save_carrito(request, carrito):
         """Guarda el carrito en la sesión."""
-        request.session[settings.CART_SESSION_KEY] = carousel
+        request.session[settings.CART_SESSION_KEY] = carrito
         request.session.modified = True
     
     @staticmethod
@@ -136,7 +171,7 @@ class CartService:
         subtotal = Decimal('0.00')
         items_data = []
         
-        for item in carousel:
+        for item in carrito:
             cantidad = int(item.get('cantidad', 1))
             precio = Decimal(str(item.get('precio', 0)))
             tipo = item.get('tipo', 'fisico')
@@ -145,22 +180,16 @@ class CartService:
             item_subtotal = precio * cantidad
             subtotal += item_subtotal
             
-            if tipo == 'fisico':
-                try:
-                    producto = PhysicalProduct.objects.get(id=producto_id)
-                    nombre = producto.nombre
-                    imagen = producto.imagen_url or '/static/img/product-placeholder.png'
-                    peso = float(producto.peso)
-                except PhysicalProduct.DoesNotExist:
-                    continue
-            else:
-                try:
-                    producto = DigitalLicense.objects.get(id=producto_id)
-                    nombre = producto.nombre
-                    imagen = producto.imagen_url or '/static/img/license-placeholder.png'
-                    peso = 0
-                except DigitalLicense.DoesNotExist:
-                    continue
+            try:
+                producto = ProductFactory.obtener_producto(tipo, producto_id)
+                nombre = producto.nombre
+                imagen = producto.imagen_url or (
+                    '/static/img/product-placeholder.png' if ProductFactory.es_tipo_fisico(tipo)
+                    else '/static/img/license-placeholder.png'
+                )
+                peso = float(producto.peso) if ProductFactory.es_tipo_fisico(tipo) else 0
+            except ObjectDoesNotExist:
+                continue
             
             items_data.append({
                 'id': producto_id,

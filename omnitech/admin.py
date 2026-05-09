@@ -85,6 +85,31 @@ class OrderItemInline(admin.TabularInline):
     can_delete = False
 
 
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ['pedido_link', 'producto_nombre', 'cantidad', 'precio_formatted']
+    list_filter = ['pedido__estado']
+    search_fields = ['pedido__numero_pedido', 'producto_fisico__nombre', 'licencia__nombre']
+    readonly_fields = ['pedido', 'producto_fisico', 'licencia', 'cantidad', 'precio_unitario']
+    list_per_page = 30
+
+    def pedido_link(self, obj):
+        from django.utils.html import format_html
+        return format_html(
+            '<a href="/admin/omnitech/order/{}/change/">{}</a>',
+            obj.pedido_id, obj.pedido.numero_pedido
+        )
+    pedido_link.short_description = 'Pedido'
+
+    def producto_nombre(self, obj):
+        return obj.producto_fisico or obj.licencia
+    producto_nombre.short_description = 'Producto'
+
+    def precio_formatted(self, obj):
+        return f"${obj.precio_unitario:,.0f}"
+    precio_formatted.short_description = 'Precio Unit.'
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ['numero_pedido', 'usuario_display', 'estado_badge', 'total_formatted', 'fecha_creacion']

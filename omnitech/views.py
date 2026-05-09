@@ -29,6 +29,7 @@ from .models import (
 )
 from .services import enviar_boleta_pedido, OrderService, CartService, EmailService, enviar_claves_licencia
 from .stripe_service import crear_checkout_session, verificar_pago
+from .factories import ProductFactory
 
 
 def home(request):
@@ -102,69 +103,7 @@ def detalle_producto(request, producto_id):
     return render(request, 'detalle_producto.html', context)
 
 
-def get_carrito(request):
-    """Obtiene el carrito de la sesión."""
-    return request.session.get(settings.CART_SESSION_KEY, [])
 
-
-def save_carrito(request, carrito):
-    """Guarda el carrito en la sesión."""
-    request.session[settings.CART_SESSION_KEY] = carrito
-    request.session.modified = True
-
-
-def calcular_totales_carrito(carrito):
-    """Calcula subtotal y costos del carrito."""
-    subtotal = Decimal('0.00')
-    items_data = []
-    
-    for item in carrito:
-        cantidad = int(item.get('cantidad', 1))
-        precio = Decimal(str(item.get('precio', 0)))
-        tipo = item.get('tipo', 'fisico')
-        producto_id = item.get('producto_id')
-        
-        item_subtotal = precio * cantidad
-        subtotal += item_subtotal
-        
-        if tipo == 'fisico':
-            try:
-                producto = PhysicalProduct.objects.get(id=producto_id)
-                nombre = producto.nombre
-                imagen = producto.imagen_url if producto.imagen_url else '/static/img/product-placeholder.png'
-                peso = float(producto.peso)
-            except PhysicalProduct.DoesNotExist:
-                continue
-        else:
-            try:
-                producto = DigitalLicense.objects.get(id=producto_id)
-                nombre = producto.nombre
-                imagen = producto.imagen_url if producto.imagen_url else '/static/img/license-placeholder.png'
-                peso = 0
-            except DigitalLicense.DoesNotExist:
-                continue
-        
-        items_data.append({
-            'id': producto_id,
-            'tipo': tipo,
-            'nombre': nombre,
-            'precio': float(precio),
-            'cantidad': cantidad,
-            'subtotal': float(item_subtotal),
-            'imagen': imagen,
-            'peso': peso,
-        })
-    
-    peso_total = sum(item['peso'] * item['cantidad'] for item in items_data)
-    costo_envio = Decimal(str(peso_total * 500)) if peso_total > 0 else Decimal('0.00')
-    
-    return {
-        'items': items_data,
-        'subtotal': float(subtotal),
-        'costo_envio': float(costo_envio),
-        'total': float(subtotal + costo_envio),
-        'cantidad_items': sum(item['cantidad'] for item in items_data),
-    }
 
 
 @require_POST
@@ -176,18 +115,16 @@ def agregar_al_carrito(request):
         tipo = data.get('tipo', 'fisico')
         cantidad = int(data.get('cantidad', 1))
         
-        if tipo == 'fisico':
-            producto = get_object_or_404(PhysicalProduct, id=producto_id)
+        producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
+        if ProductFactory.es_tipo_fisico(tipo):
             if producto.stock_disponible < cantidad:
                 return JsonResponse({'success': False, 'error': 'Stock insuficiente'})
-            precio = producto.precio
         else:
-            producto = get_object_or_404(DigitalLicense, id=producto_id)
             if producto.estado_licencia != LicenseState.DISPONIBLE:
                 return JsonResponse({'success': False, 'error': 'Licencia no disponible'})
-            precio = producto.precio
+        precio = producto.precio
         
-        carrito = get_carrito(request)
+        carrito = CartService.get_carrito(request)
         
         item_existente = None
         for i, item in enumerate(carrito):
@@ -206,8 +143,8 @@ def agregar_al_carrito(request):
                 'cantidad': cantidad,
             })
         
-        save_carrito(request, carrito)
-        totales = calcular_totales_carrito(carrito)
+        CartService.save_carrito(request, carrito)
+        totales = CartService.calcular_totales(carrito)
         
         return JsonResponse({
             'success': True,
@@ -227,22 +164,22 @@ def actualizar_carrito(request):
         tipo = data.get('tipo')
         cantidad = int(data.get('cantidad', 1))
         
-        carrito = get_carrito(request)
+        carrito = CartService.get_carrito(request)
         
         for item in carrito:
             if item.get('producto_id') == producto_id and item.get('tipo') == tipo:
                 if cantidad <= 0:
                     carrito.remove(item)
                 else:
-                    if tipo == 'fisico':
-                        producto = get_object_or_404(PhysicalProduct, id=producto_id)
+                    if cantidad > 0 and ProductFactory.es_tipo_fisico(tipo):
+                        producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
                         if producto.stock_disponible < cantidad:
                             return JsonResponse({'success': False, 'error': 'Stock insuficiente'})
                     item['cantidad'] = cantidad
                 break
         
-        save_carrito(request, carrito)
-        totales = calcular_totales_carrito(carrito)
+        CartService.save_carrito(request, carrito)
+        totales = CartService.calcular_totales(carrito)
         
         return JsonResponse({'success': True, **totales})
     except Exception as e:
@@ -257,12 +194,12 @@ def eliminar_del_carrito(request):
         producto_id = data.get('producto_id')
         tipo = data.get('tipo')
         
-        carrito = get_carrito(request)
+        carrito = CartService.get_carrito(request)
         carrito = [item for item in carrito 
                    if not (item.get('producto_id') == producto_id and item.get('tipo') == tipo)]
         
-        save_carrito(request, carrito)
-        totales = calcular_totales_carrito(carrito)
+        CartService.save_carrito(request, carrito)
+        totales = CartService.calcular_totales(carrito)
         
         return JsonResponse({'success': True, **totales})
     except Exception as e:
@@ -272,14 +209,14 @@ def eliminar_del_carrito(request):
 @require_POST
 def vaciar_carrito(request):
     """Vacía completamente el carrito."""
-    save_carrito(request, [])
+    CartService.save_carrito(request, [])
     return JsonResponse({'success': True, 'message': 'Carrito vaciado'})
 
 
 def ver_carrito(request):
     """Vista del carrito de compras."""
-    carrito = get_carrito(request)
-    totales = calcular_totales_carrito(carrito)
+    carrito = CartService.get_carrito(request)
+    totales = CartService.calcular_totales(carrito)
     context = {
         'carrito': totales['items'],
         'subtotal': totales['subtotal'],
@@ -292,7 +229,7 @@ def ver_carrito(request):
 
 def checkout(request):
     """Página de checkout con información del pedido."""
-    carrito = get_carrito(request)
+    carrito = CartService.get_carrito(request)
     if not carrito:
         messages.warning(request, 'Tu carrito está vacío.')
         return redirect('productos')
@@ -300,7 +237,7 @@ def checkout(request):
     if request.method == 'POST':
         return crear_sesion_stripe(request)
     
-    totales = calcular_totales_carrito(carrito)
+    totales = CartService.calcular_totales(carrito)
     region = request.session.get('region_usuario', '')
     
     if region == 'La Araucanía' and totales['subtotal'] > float(settings.SUBSIDIO_MONTO):
@@ -320,9 +257,9 @@ def checkout(request):
 
 @require_POST
 def crear_sesion_stripe(request):
-    """Crea una sesión de pago de Stripe y redirige."""
+    """DIP: Delega la creación del pedido a OrderService."""
     try:
-        carrito = get_carrito(request)
+        carrito = CartService.get_carrito(request)
         if not carrito:
             messages.error(request, 'Tu carrito está vacío')
             return redirect('productos')
@@ -335,35 +272,11 @@ def crear_sesion_stripe(request):
             messages.error(request, 'El correo es requerido')
             return redirect('checkout')
         
-        numero_pedido = f'OT-{uuid.uuid4().hex[:8].upper()}'
-        
-        peso_total = sum(
-            item.get('peso', 0) * item['cantidad'] 
-            for item in carrito 
-            if item.get('tipo') == 'fisico'
+        order, _ = OrderService.crear_pedido_para_stripe(
+            request, carrito, email, region, observaciones
         )
         
-        costo_envio = Decimal(str(peso_total * 500)) if peso_total > 0 else Decimal('0')
-        if region == 'La Araucanía':
-            totales = calcular_totales_carrito(carrito)
-            if totales['subtotal'] > float(settings.SUBSIDIO_MONTO):
-                costo_envio = Decimal('0')
-        
-        order = Order.objects.create(
-            numero_pedido=numero_pedido,
-            usuario=request.user if request.user.is_authenticated else None,
-            email_invitado=email,
-            estado=OrderState.PENDIENTE_PAGO,
-            region_envio=region,
-            observaciones=observaciones,
-            costo_envio=costo_envio,
-        )
-        
-        request.session['order_id'] = numero_pedido
-        request.session['carrito_temp'] = carrito
-        request.session.save()
-        
-        totales = calcular_totales_carrito(carrito)
+        totales = CartService.calcular_totales(carrito)
         
         success_url = request.build_absolute_uri(f'/pago-exitoso/?session_id={{CHECKOUT_SESSION_ID}}')
         cancel_url = request.build_absolute_uri('/checkout/')
@@ -378,7 +291,7 @@ def crear_sesion_stripe(request):
 
 
 def pago_exitoso(request):
-    """Página de pago exitoso después de Stripe."""
+    """DIP: Delega el procesamiento del pedido a OrderService."""
     session_id = request.GET.get('session_id')
     
     if not session_id:
@@ -393,49 +306,18 @@ def pago_exitoso(request):
             messages.error(request, 'No se encontró el pedido')
             return redirect('home')
         
-        order = Order.objects.get(numero_pedido=order_id)
+        if not carrito_temp:
+            order = Order.objects.get(numero_pedido=order_id)
+        else:
+            order, success, error_msg = OrderService.procesar_pago(order_id, carrito_temp)
+            if not success:
+                messages.error(request, error_msg or 'Error al procesar el pago')
+                return redirect('home')
+            
+            enviar_boleta_pedido(order)
+            enviar_claves_licencia(order)
         
-        if order.estado == OrderState.PENDIENTE_PAGO:
-            with transaction.atomic():
-                subtotal = Decimal('0.00')
-                
-                for item in carrito_temp:
-                    producto_id = item['producto_id']
-                    tipo = item['tipo']
-                    cantidad = int(item['cantidad'])
-                    precio = Decimal(str(item['precio']))
-                    subtotal += precio * cantidad
-                    
-                    if tipo == 'fisico':
-                        producto = PhysicalProduct.objects.select_for_update().get(id=producto_id)
-                        producto.stock_fisico = max(0, producto.stock_fisico - cantidad)
-                        producto.save(update_fields=['stock_fisico'])
-                        OrderItem.objects.create(
-                            pedido=order,
-                            producto_fisico=producto,
-                            cantidad=cantidad,
-                            precio_unitario=precio,
-                        )
-                    else:
-                        licencia = DigitalLicense.objects.select_for_update().get(id=producto_id)
-                        licencia.entregar()
-                        OrderItem.objects.create(
-                            pedido=order,
-                            licencia=licencia,
-                            cantidad=cantidad,
-                            precio_unitario=precio,
-                        )
-                
-                order.subtotal = subtotal
-                order.total = subtotal + (order.costo_envio or Decimal('0'))
-                order.estado = OrderState.PAGADO_PROCESANDO
-                order.fecha_pago = timezone.now()
-                order.save()
-                
-                enviar_boleta_pedido(order)
-                enviar_claves_licencia(order)
-        
-        save_carrito(request, [])
+        CartService.save_carrito(request, [])
         
         messages.success(request, f'¡Pago exitoso! Tu número de pedido es {order_id}')
         return render(request, 'pago_exitoso.html', {'pedido': order})

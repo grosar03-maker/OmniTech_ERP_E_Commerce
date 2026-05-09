@@ -452,9 +452,27 @@ class DigitalLicense(Product):
     def procesar_venta(self, cantidad):
         """
         OCP: Método polimórfico para procesar venta.
-        Cada subclase sabe cómo procesarse a sí misma.
+        LSP: Respeta el parámetro cantidad.
+        Si cantidad > 1, busca licencias disponibles adicionales del mismo SKU.
         """
-        return self.entregar()
+        if cantidad <= 0:
+            return False
+        if not self.entregar():
+            return False
+        if cantidad > 1:
+            licencias_extra = DigitalLicense.objects.filter(
+                sku=self.sku,
+                estado_licencia=LicenseState.DISPONIBLE
+            ).select_for_update(skip_locked=True)[:cantidad - 1]
+            for lic in licencias_extra:
+                lic.orden_compra = self.orden_compra
+                lic.entregar()
+            if licencias_extra.count() < cantidad - 1:
+                raise ValueError(
+                    f"Stock insuficiente de licencias para {self.nombre}. "
+                    f"Se necesitan {cantidad}, disponibles: {licencias_extra.count() + 1}"
+                )
+        return True
 
 
 class UserProfile(models.Model):
