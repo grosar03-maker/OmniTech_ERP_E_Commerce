@@ -60,137 +60,166 @@ def renderizar_boleta(pedido):
 def generar_html_fallback(pedido, items_list, cliente_nombre, email_destino, fecha):
     """Genera HTML de fallback si el template no existe."""
     from django.conf import settings
-    
+
     items_html = ''
     for item in items_list:
         imagen = item['imagen'] or 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=60&h=60&fit=crop'
+        badge_color = '#60a5fa' if item['tipo'] == 'Hardware' else '#a78bfa'
+        badge_bg = 'rgba(96,165,250,0.15)' if item['tipo'] == 'Hardware' else 'rgba(167,139,250,0.15)'
         items_html += f'''
         <tr>
-            <td style="padding: 16px 12px; border-bottom: 1px solid #2d2d3a;">
+            <td style="padding: 14px 12px; border-bottom: 1px solid #1e1e2e;">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <img src="{imagen}" alt="{item['nombre']}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px; display: block;">
-                    <div style="min-width: 0;">
-                        <div style="font-weight: 600; color: #ffffff; margin-bottom: 2px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{item['nombre']}</div>
-                        <div style="font-size: 11px; color: #86868b;">{item['tipo']}</div>
+                    <img src="{imagen}" alt="{item['nombre']}"
+                         style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid #2d2d3a; flex-shrink: 0;">
+                    <div>
+                        <div style="font-weight: 600; color: #f1f1f3; font-size: 13px; margin-bottom: 3px;">{item['nombre']}</div>
+                        <span style="display: inline-block; background: {badge_bg}; color: {badge_color}; padding: 2px 7px; border-radius: 20px; font-size: 10px; font-weight: 600; letter-spacing: 0.3px;">{item['tipo']}</span>
                     </div>
                 </div>
             </td>
-            <td style="padding: 16px 8px; border-bottom: 1px solid #2d2d3a; text-align: center; color: #ffffff; font-size: 14px;">{item['cantidad']}</td>
-            <td style="padding: 16px 8px; border-bottom: 1px solid #2d2d3a; text-align: right; color: #ffffff; font-size: 14px;">${item['precio_unitario']:,.0f}</td>
-            <td style="padding: 16px 0 16px 8px; border-bottom: 1px solid #2d2d3a; text-align: right; color: #ffffff; font-size: 14px; font-weight: 600;">${item['subtotal']:,.0f}</td>
+            <td style="padding: 14px 10px; border-bottom: 1px solid #1e1e2e; text-align: center; color: #d4d4d8; font-size: 14px;">{item['cantidad']}</td>
+            <td style="padding: 14px 10px; border-bottom: 1px solid #1e1e2e; text-align: right; color: #d4d4d8; font-size: 14px;">${item['precio_unitario']:,.0f}</td>
+            <td style="padding: 14px 0 14px 10px; border-bottom: 1px solid #1e1e2e; text-align: right; color: #f1f1f3; font-size: 14px; font-weight: 700;">${item['subtotal']:,.0f}</td>
         </tr>
         '''
-    
-    costo_envio_display = "Gratis" if float(pedido.costo_envio or 0) == 0 else f"${float(pedido.costo_envio):,.0f}"
-    
+
+    costo_envio_display = "Gratis ✓" if float(pedido.costo_envio or 0) == 0 else f"${float(pedido.costo_envio):,.0f}"
+    costo_color = '#4ade80' if float(pedido.costo_envio or 0) == 0 else '#d4d4d8'
+
     html = f'''
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OmniTech - Comprobante de compra</title>
-    <style>
-        @media only screen and (max-width: 480px) {{
-            .ticket-table {{ width: 100% !important; }}
-            .ticket-container {{ padding: 20px 16px !important; }}
-            .ticket-product-cell {{ display: block !important; }}
-            .ticket-product-img {{ width: 40px !important; height: 40px !important; }}
-            .ticket-row {{ display: block !important; text-align: left !important; }}
-            .ticket-row td {{ display: block !important; padding: 8px 0 !important; text-align: left !important; }}
-            .ticket-header {{ text-align: left !important; }}
-            .ticket-total-row {{ flex-direction: column !important; align-items: flex-start !important; }}
-            .ticket-total-label {{ text-align: left !important; margin-bottom: 4px; }}
-            .ticket-total-value {{ text-align: left !important; }}
-        }}
-    </style>
+    <!--[if mso]><style>td, th {{ border-collapse: collapse; }}</style><![endif]-->
 </head>
-<body style="margin: 0; padding: 0; background: #000000; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;">
-    <div class="ticket-container" style="max-width: 520px; margin: 0 auto; background: #0a0a0f; padding: 32px 24px;">
-        <!-- Header -->
-        <div style="text-align: center; padding-bottom: 24px; border-bottom: 1px solid #2d2d3a;">
-            <h1 style="margin: 0 0 6px 0; font-size: 28px; font-weight: 700; color: #ffffff;">
-                <span style="background: linear-gradient(135deg, #ffffff 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">OmniTech</span>
-            </h1>
-            <p style="margin: 0; font-size: 12px; color: #86868b;">ERP & E-Commerce - Tu tienda de tecnología</p>
-        </div>
-        
-        <!-- Orden Info -->
-        <div style="padding: 24px 0; border-bottom: 1px solid #2d2d3a;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
-                <div>
-                    <div style="font-size: 11px; color: #86868b; margin-bottom: 2px;">Número de pedido</div>
-                    <div style="font-size: 18px; font-weight: 700; color: #a78bfa;">{pedido.numero_pedido}</div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 11px; color: #86868b; margin-bottom: 2px;">Fecha</div>
-                    <div style="font-size: 13px; color: #ffffff;">{fecha}</div>
-                </div>
-            </div>
-            <div style="display: inline-block; background: rgba(74, 222, 128, 0.15); color: #4ade80; padding: 6px 12px; border-radius: 16px; font-size: 11px; font-weight: 600; margin-top: 12px;">
-                ✓ Confirmado
-            </div>
-        </div>
-        
-        <!-- Cliente -->
-        <div style="padding: 24px 0; border-bottom: 1px solid #2d2d3a;">
-            <h3 style="font-size: 12px; color: #86868b; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">Datos del cliente</h3>
-            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
-                <div>
-                    <div style="font-size: 11px; color: #86868b;">Cliente</div>
-                    <div style="color: #ffffff; font-size: 14px;">{cliente_nombre}</div>
-                </div>
-                <div>
-                    <div style="font-size: 11px; color: #86868b;">Email</div>
-                    <div style="color: #ffffff; font-size: 14px;">{email_destino}</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Productos -->
-        <div style="padding: 24px 0; border-bottom: 1px solid #2d2d3a;">
-            <h3 style="font-size: 12px; color: #86868b; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">Productos</h3>
-            <table class="ticket-table" style="width: 100%; border-collapse: collapse; min-width: 300px;">
+<body style="margin:0; padding:0; background:#09090d; font-family:'Segoe UI',Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#09090d; padding: 32px 16px;">
+<tr><td align="center">
+<table role="presentation" width="520" cellpadding="0" cellspacing="0" style="background:#111118; border:1px solid #1e1e2e; border-radius:16px; overflow:hidden; max-width:520px; width:100%;">
+
+    <!-- HEADER GRADIENT -->
+    <tr>
+        <td style="background: linear-gradient(135deg, #18182a 0%, #0f0f1a 60%, #1a0f2e 100%); padding: 32px 32px 28px; border-bottom: 1px solid #1e1e2e;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td>
+                        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">
+                            <span style="color: #f1f1f3;">Omni</span><span style="color: #a78bfa;">Tech</span>
+                        </div>
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 3px; letter-spacing: 1px; text-transform: uppercase;">Comprobante de compra</div>
+                    </td>
+                    <td align="right">
+                        <div style="display:inline-block; background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3); color:#4ade80; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; letter-spacing:0.3px;">
+                            ✓ Pago confirmado
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <!-- ORDER INFO -->
+    <tr>
+        <td style="padding: 24px 32px; border-bottom: 1px solid #1e1e2e; background:#0e0e18;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="width:50%;">
+                        <div style="font-size:10px; color:#52525b; text-transform:uppercase; letter-spacing:1px; margin-bottom:5px;">Número de pedido</div>
+                        <div style="font-size:20px; font-weight:800; color:#a78bfa; letter-spacing:-0.3px;">{pedido.numero_pedido}</div>
+                    </td>
+                    <td align="right">
+                        <div style="font-size:10px; color:#52525b; text-transform:uppercase; letter-spacing:1px; margin-bottom:5px; text-align:right;">Fecha</div>
+                        <div style="font-size:13px; color:#d4d4d8; text-align:right;">{fecha}</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <!-- CLIENTE -->
+    <tr>
+        <td style="padding: 20px 32px; border-bottom: 1px solid #1e1e2e;">
+            <div style="font-size:10px; color:#52525b; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Datos del cliente</div>
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="width:50%;">
+                        <div style="font-size:11px; color:#71717a; margin-bottom:3px;">Cliente</div>
+                        <div style="font-size:14px; color:#f1f1f3; font-weight:600;">{cliente_nombre}</div>
+                    </td>
+                    <td>
+                        <div style="font-size:11px; color:#71717a; margin-bottom:3px;">Email</div>
+                        <div style="font-size:13px; color:#a78bfa;">{email_destino}</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <!-- PRODUCTOS HEADER -->
+    <tr>
+        <td style="padding: 20px 32px 0;">
+            <div style="font-size:10px; color:#52525b; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Productos</div>
+        </td>
+    </tr>
+
+    <!-- TABLA PRODUCTOS -->
+    <tr>
+        <td style="padding: 0 32px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
                 <thead>
                     <tr>
-                        <th style="padding: 6px 12px; text-align: left; color: #86868b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500;">Producto</th>
-                        <th style="padding: 6px 8px; text-align: center; color: #86868b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500;">Cant.</th>
-                        <th style="padding: 6px 8px; text-align: right; color: #86868b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500;">Precio</th>
-                        <th style="padding: 6px 0 6px 8px; text-align: right; color: #86868b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500;">Subtotal</th>
+                        <th style="padding:8px 12px 8px; text-align:left; color:#52525b; font-size:10px; text-transform:uppercase; letter-spacing:0.8px; font-weight:600; border-bottom: 1px solid #1e1e2e;">Producto</th>
+                        <th style="padding:8px 10px; text-align:center; color:#52525b; font-size:10px; text-transform:uppercase; letter-spacing:0.8px; font-weight:600; border-bottom: 1px solid #1e1e2e;">Cant.</th>
+                        <th style="padding:8px 10px; text-align:right; color:#52525b; font-size:10px; text-transform:uppercase; letter-spacing:0.8px; font-weight:600; border-bottom: 1px solid #1e1e2e;">Precio</th>
+                        <th style="padding:8px 0 8px 10px; text-align:right; color:#52525b; font-size:10px; text-transform:uppercase; letter-spacing:0.8px; font-weight:600; border-bottom: 1px solid #1e1e2e;">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
-                {items_html}
+                    {items_html}
                 </tbody>
             </table>
-        </div>
-        
-        <!-- Totales -->
-        <div style="padding: 24px 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1a1a24;">
-                <span style="color: #a1a1aa; font-size: 14px;">Subtotal</span>
-                <span style="color: #ffffff; font-size: 14px;">${float(pedido.subtotal):,.0f}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1a1a24;">
-                <span style="color: #a1a1aa; font-size: 14px;">Envío</span>
-                <span style="color: #4ade80; font-size: 14px; font-weight: 500;">{costo_envio_display}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0 0 0; margin-top: 8px;">
-                <span style="color: #ffffff; font-size: 16px; font-weight: 700;">Total</span>
-                <span style="color: #a78bfa; font-size: 22px; font-weight: 700;">${float(pedido.total):,.0f}</span>
-            </div>
-        </div>
-        
-        <!-- Footer -->
-        <div style="padding-top: 24px; text-align: center; border-top: 1px solid #1a1a24;">
-            <p style="font-size: 13px; color: #86868b; margin: 0 0 12px 0; line-height: 1.5;">
+        </td>
+    </tr>
+
+    <!-- TOTALES -->
+    <tr>
+        <td style="padding: 20px 32px; border-top: 1px solid #1e1e2e;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="padding: 7px 0; color:#71717a; font-size:13px;">Subtotal</td>
+                    <td style="padding: 7px 0; text-align:right; color:#d4d4d8; font-size:13px;">${float(pedido.subtotal):,.0f}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 7px 0; color:#71717a; font-size:13px; border-bottom: 1px solid #1e1e2e; padding-bottom:14px;">Envío</td>
+                    <td style="padding: 7px 0; text-align:right; color:{costo_color}; font-size:13px; font-weight:600; border-bottom: 1px solid #1e1e2e; padding-bottom:14px;">{costo_envio_display}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 16px 0 0; color:#f1f1f3; font-size:17px; font-weight:700;">Total</td>
+                    <td style="padding: 16px 0 0; text-align:right; color:#a78bfa; font-size:24px; font-weight:800;">${float(pedido.total):,.0f}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <!-- FOOTER -->
+    <tr>
+        <td style="padding: 20px 32px 28px; border-top: 1px solid #1e1e2e; text-align:center; background:#0e0e18;">
+            <p style="font-size:12px; color:#71717a; margin:0 0 6px; line-height:1.6;">
                 Gracias por tu compra. Tu pedido será procesado en 24-48 horas hábiles.
             </p>
-            <p style="font-size: 11px; color: #52525a; margin: 0;">
-                OmniTech © 2026 - Para soporte: soporte@omnitech.cl
+            <p style="font-size:11px; color:#3f3f46; margin:0;">
+                OmniTech © 2026 · <a href="mailto:soporte@omnitech.cl" style="color:#a78bfa; text-decoration:none;">soporte@omnitech.cl</a>
             </p>
-        </div>
-    </div>
+        </td>
+    </tr>
+
+</table>
+</td></tr>
+</table>
 </body>
 </html>
     '''

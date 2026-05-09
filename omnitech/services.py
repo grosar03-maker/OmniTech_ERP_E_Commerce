@@ -327,95 +327,139 @@ def enviar_claves_licencia(pedido):
     except Exception as e:
         return False, str(e)
 
-
 def generar_html_claves(claves, numero_pedido):
-    """Genera HTML con las claves de licencia."""
+    """Genera HTML con las claves de licencia — diseño mejorado, compatible con Gmail/Outlook."""
     cards_html = ''
-    for idx, item in enumerate(claves):
-        card_id = f"license-{idx}"
+    for item in claves:
         cards_html += f'''
-        <div style="background: linear-gradient(135deg, #1a1a24 0%, #0f0f14 100%); border: 1px solid #2d2d3a; border-radius: 16px; padding: 20px; margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-                <div>
-                    <div style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 4px;">{item['nombre']}</div>
-                    <div style="font-size: 12px; color: #86868b;">
-                        <span style="display: inline-block; background: rgba(102, 126, 234, 0.2); color: #a78bfa; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">{item['plataforma']}</span>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 10px; color: #86868b; margin-bottom: 2px;">Vigencia</div>
-                    <div style="font-size: 14px; color: #4ade80; font-weight: 600;">{item['duracion']} dias</div>
-                </div>
-            </div>
-            <div style="background: #0a0a0f; border-radius: 8px; padding: 12px;">
-                <div style="font-size: 10px; color: #86868b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Tu clave de licencia</div>
-                <div style="font-family: 'Courier New', monospace; font-size: 14px; color: #a78bfa; font-weight: 600; word-break: break-all; line-height: 1.5;" id="{card_id}">{item['clave']}</div>
-            </div>
-            <button onclick="navigator.clipboard.writeText(document.getElementById('{card_id}').innerText)" style="margin-top: 12px; background: rgba(102, 126, 234, 0.2); border: none; color: #a78bfa; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%; transition: background 0.2s;" onmouseover="this.style.background='rgba(102,126,234,0.3)'" onmouseout="this.style.background='rgba(102,126,234,0.2)'">
-                Copiar clave
-            </button>
-        </div>
+        <tr>
+            <td style="padding: 0 0 16px 0;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="background:#13131f; border:1px solid #2a2a3e; border-radius:12px; overflow:hidden;">
+                    <!-- Card header -->
+                    <tr>
+                        <td style="padding: 16px 20px; background: linear-gradient(135deg, #1a1a2e 0%, #16162a 100%); border-bottom: 1px solid #2a2a3e;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td>
+                                        <div style="font-size:15px; font-weight:700; color:#f1f1f3;">{item['nombre']}</div>
+                                        <div style="margin-top:5px;">
+                                            <span style="display:inline-block; background:rgba(167,139,250,0.15); color:#a78bfa; padding:2px 9px; border-radius:20px; font-size:10px; font-weight:700; letter-spacing:0.5px;">{item['plataforma']}</span>
+                                        </div>
+                                    </td>
+                                    <td align="right">
+                                        <div style="font-size:10px; color:#52525b; text-align:right; margin-bottom:3px;">Vigencia</div>
+                                        <div style="font-size:16px; color:#4ade80; font-weight:700; text-align:right;">{item['duracion']} días</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Clave -->
+                    <tr>
+                        <td style="padding: 16px 20px;">
+                            <div style="font-size:10px; color:#52525b; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Tu clave de licencia</div>
+                            <div style="background:#09090d; border:1px solid #2a2a3e; border-radius:8px; padding:14px 16px;">
+                                <span style="font-family:'Courier New',Courier,monospace; font-size:15px; color:#a78bfa; font-weight:700; letter-spacing:1px; word-break:break-all; line-height:1.5;">{item['clave']}</span>
+                            </div>
+                            <div style="margin-top:10px; font-size:11px; color:#52525b;">
+                                Copia esta clave y pégala al activar tu software.
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
         '''
-    
+
     html = f'''
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OmniTech - Tus claves de licencia</title>
 </head>
-<body style="margin: 0; padding: 0; background: #000000; font-family: 'Segoe UI', -apple-system, sans-serif;">
-    <div style="max-width: 520px; margin: 0 auto; background: #0a0a0f; padding: 32px 24px;">
-        <!-- Header -->
-        <div style="text-align: center; padding-bottom: 24px; border-bottom: 1px solid #2d2d3a;">
-            <h1 style="margin: 0 0 6px 0; font-size: 24px; font-weight: 700; color: #ffffff;">
-                <span style="background: linear-gradient(135deg, #ffffff 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">OmniTech</span>
-            </h1>
-            <p style="margin: 0; font-size: 12px; color: #86868b;">Tus claves de licencia</p>
-        </div>
-        
-        <!-- Info -->
-        <div style="padding: 24px 0; border-bottom: 1px solid #2d2d3a;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-size: 11px; color: #86868b;">Numero de pedido</div>
-                    <div style="font-size: 18px; font-weight: 700; color: #a78bfa;">{numero_pedido}</div>
-                </div>
-                <div style="display: inline-block; background: rgba(74, 222, 128, 0.15); color: #4ade80; padding: 6px 12px; border-radius: 16px; font-size: 11px; font-weight: 600;">
-                    Pago confirmado
-                </div>
-            </div>
-        </div>
-        
-        <!-- titulo -->
-        <div style="padding: 24px 0 12px 0;">
-            <h3 style="font-size: 12px; color: #86868b; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Tus licencias adquiridas</h3>
-        </div>
-        
-        <!-- Licencias -->
-        <div style="padding-bottom: 24px;">
-            {cards_html}
-        </div>
-        
-        <!-- Instrucciones -->
-        <div style="padding: 20px; background: linear-gradient(135deg, #1e1e32 0%, #16162a 100%); border-radius: 12px; border: 1px solid #2d2d3a;">
-            <p style="font-size: 13px; color: #ffffff; margin: 0 0 12px 0; font-weight: 600;">Como activar tu licencia:</p>
-            <ol style="font-size: 12px; color: #a1a1aa; margin: 0; padding-left: 16px; line-height: 1.8;">
-                <li>Copia la clave de licencia haciendo clic en el boton "Copiar clave"</li>
-                <li>Abre la aplicacion o plataforma del software</li>
-                <li>Busca la opcion "Activar licencia" o "Ingresar clave"</li>
-                <li>Pega la clave y confirma la activación</li>
-            </ol>
-        </div>
-        
-        <!-- Footer -->
-        <div style="padding-top: 24px; text-align: center; border-top: 1px solid #1a1a24;">
-            <p style="font-size: 11px; color: #52525a; margin: 0;">
-                OmniTech 2026 - Soporte: soporte@omnitech.cl
+<body style="margin:0; padding:0; background:#09090d; font-family:'Segoe UI',Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#09090d; padding: 32px 16px;">
+<tr><td align="center">
+<table role="presentation" width="520" cellpadding="0" cellspacing="0" style="background:#111118; border:1px solid #1e1e2e; border-radius:16px; overflow:hidden; max-width:520px; width:100%;">
+
+    <!-- HEADER -->
+    <tr>
+        <td style="background:linear-gradient(135deg,#18182a 0%,#0f0f1a 60%,#1a0f2e 100%); padding:30px 32px 26px; border-bottom:1px solid #1e1e2e;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td>
+                        <div style="font-size:26px; font-weight:800; letter-spacing:-0.5px;">
+                            <span style="color:#f1f1f3;">Omni</span><span style="color:#a78bfa;">Tech</span>
+                        </div>
+                        <div style="font-size:11px; color:#6b7280; margin-top:3px; letter-spacing:1px; text-transform:uppercase;">Tus claves de licencia</div>
+                    </td>
+                    <td align="right">
+                        <div style="display:inline-block; background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3); color:#4ade80; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700;">
+                            ✓ Pago confirmado
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <!-- PEDIDO INFO -->
+    <tr>
+        <td style="padding: 20px 32px; border-bottom:1px solid #1e1e2e; background:#0e0e18;">
+            <div style="font-size:11px; color:#52525b; margin-bottom:4px;">Número de pedido</div>
+            <div style="font-size:22px; font-weight:800; color:#a78bfa; letter-spacing:-0.3px;">{numero_pedido}</div>
+        </td>
+    </tr>
+
+    <!-- TITULO LICENCIAS -->
+    <tr>
+        <td style="padding: 22px 32px 8px;">
+            <div style="font-size:10px; color:#52525b; text-transform:uppercase; letter-spacing:1px;">Licencias adquiridas</div>
+        </td>
+    </tr>
+
+    <!-- LICENCIAS -->
+    <tr>
+        <td style="padding: 4px 32px 8px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+                {cards_html}
+            </table>
+        </td>
+    </tr>
+
+    <!-- INSTRUCCIONES -->
+    <tr>
+        <td style="padding: 0 32px 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#1a1a2e,#16162a); border:1px solid #2a2a3e; border-radius:12px;">
+                <tr>
+                    <td style="padding: 18px 20px;">
+                        <div style="font-size:13px; color:#f1f1f3; font-weight:700; margin-bottom:12px;">Cómo activar tu licencia</div>
+                        <table cellpadding="0" cellspacing="0">
+                            <tr><td style="padding:3px 0; font-size:12px; color:#a1a1aa; line-height:1.7;">1. &nbsp;Copia la clave de licencia que ves arriba.</td></tr>
+                            <tr><td style="padding:3px 0; font-size:12px; color:#a1a1aa; line-height:1.7;">2. &nbsp;Abre la aplicación o plataforma del software.</td></tr>
+                            <tr><td style="padding:3px 0; font-size:12px; color:#a1a1aa; line-height:1.7;">3. &nbsp;Busca la opción "Activar licencia" o "Ingresar clave".</td></tr>
+                            <tr><td style="padding:3px 0; font-size:12px; color:#a1a1aa; line-height:1.7;">4. &nbsp;Pega la clave y confirma la activación.</td></tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <!-- FOOTER -->
+    <tr>
+        <td style="padding: 18px 32px 26px; border-top:1px solid #1e1e2e; text-align:center; background:#0e0e18;">
+            <p style="font-size:11px; color:#3f3f46; margin:0;">
+                OmniTech © 2026 · <a href="mailto:soporte@omnitech.cl" style="color:#a78bfa; text-decoration:none;">soporte@omnitech.cl</a>
             </p>
-        </div>
-    </div>
+        </td>
+    </tr>
+
+</table>
+</td></tr>
+</table>
 </body>
 </html>
     '''

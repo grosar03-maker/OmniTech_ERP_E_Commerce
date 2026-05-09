@@ -11,6 +11,8 @@ from django.conf import settings
 from django.db import models
 from decimal import Decimal
 import json
+import logging
+logger = logging.getLogger(__name__)
 
 from .models import (
     PhysicalProduct, DigitalLicense,
@@ -308,15 +310,17 @@ def pago_exitoso(request):
                 messages.error(request, error_msg or 'Error al procesar el pago')
                 return redirect('home')
 
-            try:
-                enviar_boleta_pedido(order)
-            except Exception as e:
-                print(f"Error enviando boleta: {e}")
+            boleta_ok, boleta_msg = enviar_boleta_pedido(order)
+            if boleta_ok:
+                logger.info(f"[CORREO] Boleta enviada correctamente: {boleta_msg}")
+            else:
+                logger.error(f"[CORREO] Fallo al enviar boleta: {boleta_msg}")
 
-            try:
-                enviar_claves_licencia(order)
-            except Exception as e:
-                print(f"Error enviando claves: {e}")
+            claves_ok, claves_msg = enviar_claves_licencia(order)
+            if claves_ok:
+                logger.info(f"[CORREO] Claves enviadas correctamente: {claves_msg}")
+            else:
+                logger.error(f"[CORREO] Fallo al enviar claves: {claves_msg}")
 
         CartService.save_carrito(request, [])
 
