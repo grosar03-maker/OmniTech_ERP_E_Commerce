@@ -17,6 +17,7 @@ class ProductFactory:
     PRODUCT_MAP = {
         'fisico': PhysicalProduct,
         'software': DigitalLicense,
+        'digital': DigitalLicense,
     }
 
     @classmethod

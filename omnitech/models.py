@@ -350,8 +350,8 @@ class PhysicalProduct(Product):
 
     def confirmar_reserva(self, cantidad):
         """Convierte reserva en venta efectividad."""
-        self.stock_fisico -= cantidad
-        self.stock_reservado -= cantidad
+        self.stock_fisico = max(0, self.stock_fisico - cantidad)
+        self.stock_reservado = max(0, self.stock_reservado - cantidad)
         self.save(update_fields=['stock_fisico', 'stock_reservado'])
 
     def procesar_venta(self, cantidad):
@@ -424,10 +424,11 @@ class DigitalLicense(Product):
         """
         Entrega la licencia al cliente.
         Una vez consumida, es inmutable (RN-02).
+        Acepta DISPONIBLE y RESERVADA para soportar flujo directo de compra.
         """
         from django.utils import timezone
         
-        if self.estado_licencia == LicenseState.RESERVADA:
+        if self.estado_licencia in (LicenseState.DISPONIBLE, LicenseState.RESERVADA):
             self.estado_licencia = LicenseState.CONSUMIDA
             self.fecha_asignacion = timezone.now()
             self.save(update_fields=['estado_licencia', 'fecha_asignacion'])
