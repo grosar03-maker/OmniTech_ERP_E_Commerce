@@ -106,7 +106,7 @@ class OrderService:
 
         costo_envio = Decimal(str(peso_total * 500)) if peso_total > 0 else Decimal('0')
 
-        if region == 'La Araucanía':
+        if region == 'La Araucania':
             subtotal = sum(Decimal(str(item['precio'])) * item['cantidad'] for item in carrito)
             if subtotal > Decimal(str(settings.SUBSIDIO_MONTO)):
                 costo_envio = Decimal('0')
@@ -139,7 +139,7 @@ class OrderService:
         costo = Decimal(str(peso_total * 500)) if peso_total > 0 else Decimal('0')
         
         # RN-04: Subsidio La Araucanía
-        if region == 'La Araucanía':
+        if region == 'La Araucania':
             subtotal = sum(Decimal(str(item['precio'])) * item['cantidad'] for item in carrito)
             if subtotal > Decimal(str(settings.SUBSIDIO_MONTO)):
                 costo = Decimal('0')

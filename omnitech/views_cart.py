@@ -216,9 +216,9 @@ def checkout(request):
         return crear_sesion_stripe(request)
 
     totales = CartService.calcular_totales(carrito)
-    region = request.session.get('region_usuario', '')
+    region = ''
 
-    if region == 'La Araucanía' and totales['subtotal'] > float(settings.SUBSIDIO_MONTO):
+    if region == 'La Araucania' and totales['subtotal'] > float(settings.SUBSIDIO_MONTO):
         totales['costo_envio'] = 0
         totales['total'] = totales['subtotal']
 
@@ -229,6 +229,7 @@ def checkout(request):
         'total': totales['total'],
         'region': region,
         'stripe_public_key': settings.STRIPE_PUBLIC_KEY,
+        'SUBSIDIO_MONTO': settings.SUBSIDIO_MONTO,
     }
     return render(request, 'checkout.html', context)
 
@@ -255,8 +256,9 @@ def crear_sesion_stripe(request):
 
         totales = CartService.calcular_totales(carrito)
 
-        success_url = request.build_absolute_uri(f'/pago-exitoso/?session_id={{CHECKOUT_SESSION_ID}}')
-        cancel_url = request.build_absolute_uri('/checkout/')
+        base = f'{request.scheme}://{request.get_host()}'
+        success_url = f'{base}/pago-exitoso/?session_id={{CHECKOUT_SESSION_ID}}'
+        cancel_url = f'{base}/checkout/'
 
         session = crear_checkout_session(order, totales['items'], success_url, cancel_url)
 
@@ -291,8 +293,15 @@ def pago_exitoso(request):
                 messages.error(request, error_msg or 'Error al procesar el pago')
                 return redirect('home')
 
-            enviar_boleta_pedido(order)
-            enviar_claves_licencia(order)
+            try:
+                enviar_boleta_pedido(order)
+            except Exception as e:
+                print(f"Error enviando boleta: {e}")
+
+            try:
+                enviar_claves_licencia(order)
+            except Exception as e:
+                print(f"Error enviando claves: {e}")
 
         CartService.save_carrito(request, [])
 
@@ -305,3 +314,6 @@ def pago_exitoso(request):
         traceback.print_exc()
         messages.error(request, 'Error al procesar el pago')
         return redirect('home')
+
+
+

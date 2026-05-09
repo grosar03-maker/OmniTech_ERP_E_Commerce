@@ -392,22 +392,22 @@ select.form-input {
                                 <label>Región</label>
                                 <select name="region" id="region" class="form-input" required>
                                     <option value="">Selecciona región</option>
-                                    <option value="La Araucania">La Araucanía (Envío gratis sobre $100.000)</option>
-                                    <option value="Metropolitana">Región Metropolitana de Santiago</option>
-                                    <option value="Valparaiso">Región de Valparaíso</option>
-                                    <option value="Biobio">Región del Biobío</option>
-                                    <option value="Maule">Región del Maule</option>
-                                    <option value="Nuble">Región de Ñuble</option>
-                                    <option value="Los Rios">Región de Los Ríos</option>
-                                    <option value="Los Lagos">Región de Los Lagos</option>
-                                    <option value="Aysen">Región de Aysén</option>
-                                    <option value="Magallanes">Región de Magallanes</option>
-                                    <option value="Antofagasta">Región de Antofagasta</option>
-                                    <option value="Atacama">Región de Atacama</option>
-                                    <option value="Coquimbo">Región de Coquimbo</option>
-                                    <option value="OHiggins">Región del Libertador O'Higgins</option>
-                                    <option value="Arica">Región de Arica y Parinacota</option>
-                                    <option value="Tarapaca">Región de Tarapacá</option>
+                                    <option value="La Araucania" {% if region == 'La Araucania' %}selected{% endif %}>La Araucanía (Envío gratis sobre $100.000)</option>
+                                    <option value="Metropolitana" {% if region == 'Metropolitana' %}selected{% endif %}>Región Metropolitana de Santiago</option>
+                                    <option value="Valparaiso" {% if region == 'Valparaiso' %}selected{% endif %}>Región de Valparaíso</option>
+                                    <option value="Biobio" {% if region == 'Biobio' %}selected{% endif %}>Región del Biobío</option>
+                                    <option value="Maule" {% if region == 'Maule' %}selected{% endif %}>Región del Maule</option>
+                                    <option value="Nuble" {% if region == 'Nuble' %}selected{% endif %}>Región de Ñuble</option>
+                                    <option value="Los Rios" {% if region == 'Los Rios' %}selected{% endif %}>Región de Los Ríos</option>
+                                    <option value="Los Lagos" {% if region == 'Los Lagos' %}selected{% endif %}>Región de Los Lagos</option>
+                                    <option value="Aysen" {% if region == 'Aysen' %}selected{% endif %}>Región de Aysén</option>
+                                    <option value="Magallanes" {% if region == 'Magallanes' %}selected{% endif %}>Región de Magallanes</option>
+                                    <option value="Antofagasta" {% if region == 'Antofagasta' %}selected{% endif %}>Región de Antofagasta</option>
+                                    <option value="Atacama" {% if region == 'Atacama' %}selected{% endif %}>Región de Atacama</option>
+                                    <option value="Coquimbo" {% if region == 'Coquimbo' %}selected{% endif %}>Región de Coquimbo</option>
+                                    <option value="OHiggins" {% if region == 'OHiggins' %}selected{% endif %}>Región del Libertador O'Higgins</option>
+                                    <option value="Arica" {% if region == 'Arica' %}selected{% endif %}>Región de Arica y Parinacota</option>
+                                    <option value="Tarapaca" {% if region == 'Tarapaca' %}selected{% endif %}>Región de Tarapacá</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -464,26 +464,24 @@ select.form-input {
                     <div class="summary-totals">
                         <div class="summary-row">
                             <span>Subtotal</span>
-                            <span>{{ subtotal|clp_price }}</span>
+                            <span id="subtotal-valor" data-valor="{{ subtotal }}" data-subsidio="{{ SUBSIDIO_MONTO }}">{{ subtotal|clp_price }}</span>
                         </div>
                         <div class="summary-row">
                             <span>Envío</span>
-                            <span id="costo-envio">{{ costo_envio|clp_price }}</span>
+                            <span id="costo-envio" data-valor="{{ costo_envio }}">{{ costo_envio|clp_price }}</span>
                         </div>
                         <div class="summary-row total">
                             <span>Total</span>
-                            <span id="total">{{ total|clp_price }}</span>
+                            <span id="total-valor" data-valor="{{ total }}">{{ total|clp_price }}</span>
                         </div>
                     </div>
                     
-                    {% if region == 'La Araucanía' %}
-                    <div class="free-shipping-badge">
+                    <div id="free-shipping-badge" class="free-shipping-badge" {% if region != 'La Araucania' %}style="display:none"{% endif %}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"/>
                         </svg>
                         ¡Envío gratis por estar en La Araucanía!
                     </div>
-                    {% endif %}
                     
                     <button type="submit" class="btn-pay">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -531,18 +529,47 @@ document.addEventListener('DOMContentLoaded', function() {
     const regionSelect = document.getElementById('region');
     const ciudadSelect = document.getElementById('ciudad');
 
-    regionSelect.addEventListener('change', function() {
-        const region = this.value.replace('í', 'i').replace('á', 'a').replace('é', 'e').replace('ó', 'o').replace('ú', 'u').replace('ñ', 'n').replace('ü', 'u').replace("'", '');
+    var costoEnvioOriginal = parseFloat(document.getElementById('costo-envio').getAttribute('data-valor'));
+    var montoSubsidio = parseFloat(document.getElementById('subtotal-valor').getAttribute('data-subsidio'));
+
+    function poblarCiudades(region) {
         ciudadSelect.innerHTML = '<option value="">Selecciona ciudad</option>';
-        
         if (region && ciudadesPorRegion[region]) {
             ciudadesPorRegion[region].forEach(function(ciudad) {
-                const option = document.createElement('option');
+                var option = document.createElement('option');
                 option.value = ciudad;
                 option.textContent = ciudad;
                 ciudadSelect.appendChild(option);
             });
         }
+    }
+
+    function formatearPrecio(valor) {
+        return '$' + Math.round(valor).toLocaleString('es-CL');
+    }
+
+    function actualizarPrecios(region) {
+        var subtotal = parseFloat(document.getElementById('subtotal-valor').getAttribute('data-valor'));
+        var envioSpan = document.getElementById('costo-envio');
+        var totalSpan = document.getElementById('total-valor');
+        var badge = document.getElementById('free-shipping-badge');
+
+        if (region === 'La Araucania' && subtotal > montoSubsidio) {
+            envioSpan.textContent = '$0';
+            totalSpan.textContent = formatearPrecio(subtotal);
+            if (badge) badge.style.display = '';
+        } else {
+            envioSpan.textContent = formatearPrecio(costoEnvioOriginal);
+            totalSpan.textContent = formatearPrecio(subtotal + costoEnvioOriginal);
+            if (badge) badge.style.display = 'none';
+        }
+    }
+
+    regionSelect.addEventListener('change', function() {
+        var regionRaw = this.value;
+        var regionKey = regionRaw.replace('í', 'i').replace('á', 'a').replace('é', 'e').replace('ó', 'o').replace('ú', 'u').replace('ñ', 'n').replace('ü', 'u').replace("'", '');
+        poblarCiudades(regionKey);
+        actualizarPrecios(regionRaw);
     });
 });
 </script>
