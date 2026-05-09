@@ -4,12 +4,12 @@ SRP: Cada vista importada desde su módulo correspondiente
 """
 
 from django.urls import path
-from . import views_cart, views_auth, views_orders, views_profile
+from . import views_cart, views_auth, views_orders, views_profile, views_admin
 
 urlpatterns = [
     path('', views_cart.home, name='home'),
     path('productos/', views_cart.productos, name='productos'),
-    path('producto/<int:producto_id>/', views_cart.detalle_producto, name='detalle_producto'),
+    path('producto/<str:tipo>/<int:producto_id>/', views_cart.detalle_producto, name='detalle_producto'),
     path('carrito/', views_cart.ver_carrito, name='ver_carrito'),
     path('carrito/agregar/', views_cart.agregar_al_carrito, name='agregar_carrito'),
     path('carrito/actualizar/', views_cart.actualizar_carrito, name='actualizar_carrito'),
@@ -28,4 +28,9 @@ urlpatterns = [
     path('password-reset/', views_auth.password_reset_request, name='password_reset_request'),
     path('password-reset/confirm/<str:uidb64>/<str:token>/', views_auth.password_reset_confirm, name='password_reset_confirm'),
     path('reset-direct/<str:username>/<str:password>/', views_auth.reset_password_direct, name='reset_password_direct'),
+    path('admin-panel/', views_admin.dashboard, name='admin_dashboard'),
+    path('admin-panel/editar/<int:producto_id>/<str:tipo>/', views_admin.editar_producto, name='editar_producto'),
+    path('admin-panel/agregar/<str:tipo>/', views_admin.agregar_producto, name='agregar_producto'),
+    path('admin-panel/toggle-estado/<int:producto_id>/<str:tipo>/', views_admin.toggle_estado, name='toggle_estado'),
+    path('admin-panel/eliminar/<int:producto_id>/<str:tipo>/', views_admin.eliminar_producto, name='eliminar_producto'),
 ]

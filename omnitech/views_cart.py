@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.conf import settings
+from django.db import models
 from decimal import Decimal
 import json
 
@@ -42,17 +43,35 @@ def home(request):
 def productos(request):
     categoria = request.GET.get('categoria', '')
     tipo = request.GET.get('tipo', '')
+    q = request.GET.get('q', '').strip()
 
     productos_fisicos = None
     licencias = None
 
+    base_fisicos = PhysicalProduct.objects.filter(estado=ProductState.ACTIVO)
+    base_licencias = DigitalLicense.objects.filter(estado=ProductState.ACTIVO)
+
+    if q:
+        base_fisicos = base_fisicos.filter(
+            models.Q(nombre__icontains=q) |
+            models.Q(sku__icontains=q) |
+            models.Q(descripcion__icontains=q) |
+            models.Q(categoria__icontains=q)
+        )
+        base_licencias = base_licencias.filter(
+            models.Q(nombre__icontains=q) |
+            models.Q(sku__icontains=q) |
+            models.Q(descripcion__icontains=q) |
+            models.Q(categoria__icontains=q)
+        )
+
     if tipo == 'hardware' or tipo == '':
-        productos_fisicos = PhysicalProduct.objects.filter(estado=ProductState.ACTIVO)
+        productos_fisicos = base_fisicos
         if categoria:
             productos_fisicos = productos_fisicos.filter(categoria__icontains=categoria)
 
     if tipo == 'software' or tipo == '':
-        licencias = DigitalLicense.objects.filter(estado=ProductState.ACTIVO)
+        licencias = base_licencias
         if categoria:
             licencias = licencias.filter(categoria__icontains=categoria)
 
@@ -66,26 +85,22 @@ def productos(request):
         'categorias': categorias,
         'categoria_seleccionada': categoria,
         'tipo_seleccionado': tipo,
+        'query': q,
     }
     return render(request, 'productos.html', context)
 
 
-def detalle_producto(request, producto_id):
-    producto_fisico = None
-    licencia = None
-
+def detalle_producto(request, tipo, producto_id):
     try:
-        producto_fisico = PhysicalProduct.objects.get(id=producto_id)
-    except PhysicalProduct.DoesNotExist:
-        try:
-            licencia = DigitalLicense.objects.get(id=producto_id)
-        except DigitalLicense.DoesNotExist:
-            messages.error(request, 'Producto no encontrado.')
-            return redirect('productos')
+        producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
+    except Exception:
+        messages.error(request, 'Producto no encontrado.')
+        return redirect('productos')
 
     context = {
-        'producto': producto_fisico or licencia,
-        'es_fisico': producto_fisico is not None,
+        'producto': producto,
+        'es_fisico': ProductFactory.es_tipo_fisico(tipo),
+        'tipo': tipo,
     }
     return render(request, 'detalle_producto.html', context)
 

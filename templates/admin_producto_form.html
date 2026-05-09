@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load omnitech_extras %}
+
+{% block title %}Administrar Producto - OmniTech{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="header-content">
+        <h1>
+            {% if editando %}
+                Editar {{ producto.nombre }}
+            {% elif es_fisico %}
+                Nuevo Producto Físico
+            {% else %}
+                Nueva Licencia Digital
+            {% endif %}
+        </h1>
+        <p><a href="{% url 'admin_dashboard' %}">← Volver al panel</a></p>
+    </div>
+</section>
+
+<section class="admin-section">
+    <div class="admin-container">
+        <div class="glass-card form-card">
+            <form method="POST" class="admin-form">
+                {% csrf_token %}
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>SKU</label>
+                        <input type="text" name="sku" class="form-input" value="{{ producto.sku|default:'' }}" 
+                               placeholder="HW-001" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input type="text" name="nombre" class="form-input" value="{{ producto.nombre|default:'' }}"
+                               placeholder="Nombre del producto" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea name="descripcion" class="form-input" rows="3"
+                              placeholder="Descripción del producto">{{ producto.descripcion|default:'' }}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <input type="text" name="categoria" class="form-input" value="{{ producto.categoria|default:'' }}"
+                               placeholder="Ej: Laptops">
+                    </div>
+                    <div class="form-group">
+                        <label>Precio ($)</label>
+                        <input type="number" name="precio" class="form-input" 
+                               value="{{ precio_actual }}" step="1" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>URL de Imagen</label>
+                    <input type="url" name="imagen_url" class="form-input" value="{{ producto.imagen_url|default:'' }}"
+                           placeholder="https://...">
+                </div>
+
+                {% if es_fisico or producto|class_name == 'PhysicalProduct' %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Peso (kg)</label>
+                        <input type="number" name="peso" class="form-input" 
+                               value="{{ peso_actual }}" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Stock Físico</label>
+                        <input type="number" name="stock_fisico" class="form-input" 
+                               value="{{ producto.stock_fisico|default:'' }}" min="0" required>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if es_software or producto|class_name == 'DigitalLicense' %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Plataforma</label>
+                        <input type="text" name="plataforma" class="form-input" 
+                               value="{{ producto.plataforma|default:'' }}"
+                               placeholder="Ej: Windows">
+                    </div>
+                    <div class="form-group">
+                        <label>Duración (días)</label>
+                        <input type="number" name="duracion_dias" class="form-input" 
+                               value="{{ producto.duracion_dias|default:'365' }}" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Clave Encriptada</label>
+                    <input type="text" name="clave_encriptada" class="form-input" 
+                           value="{{ producto.clave_encriptada|default:'' }}" 
+                           placeholder="Clave de licencia">
+                </div>
+
+                {% if editando %}
+                <div class="form-section-divider">
+                    <span>Agregar otra clave al mismo producto</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Clave adicional</label>
+                        <input type="text" id="nueva_clave" class="form-input" placeholder="Nueva clave de licencia">
+                    </div>
+                    <div class="form-group" style="align-self:flex-end">
+                        <button type="button" class="btn-secondary" onclick="agregarClave()">+ Agregar Clave</button>
+                    </div>
+                </div>
+                <div id="claves_container"></div>
+                {% endif %}
+                {% endif %}
+
+                <div class="form-actions">
+                    <a href="{% url 'admin_dashboard' %}" class="btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn-primary">
+                        {% if editando %}Guardar Cambios{% else %}Crear Producto{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+{% if editando and es_software %}
+<script>
+function agregarClave() {
+    var clave = document.getElementById('nueva_clave').value.trim();
+    if (!clave) return;
+    var container = document.getElementById('claves_container');
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'claves_adicionales';
+    input.value = clave;
+    container.appendChild(input);
+    var tag = document.createElement('span');
+    tag.className = 'clave-tag';
+    tag.textContent = clave;
+    tag.onclick = function() { this.remove(); input.remove(); };
+    container.appendChild(tag);
+    document.getElementById('nueva_clave').value = '';
+}
+</script>
+<style>
+.form-section-divider {
+    text-align: center;
+    margin: 24px 0 16px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.clave-tag {
+    display: inline-block;
+    padding: 6px 14px;
+    margin: 4px;
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.clave-tag:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+</style>
+{% endif %}
+{% endblock %}

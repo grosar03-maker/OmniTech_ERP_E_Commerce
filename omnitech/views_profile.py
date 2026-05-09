@@ -24,5 +24,6 @@ def perfil(request):
         'perfil': user_profile,
         'total_compras': total_compras,
         'pedidos_count': pedidos_count,
+        'is_admin': request.user.is_staff,
     }
     return render(request, 'perfil.html', context)

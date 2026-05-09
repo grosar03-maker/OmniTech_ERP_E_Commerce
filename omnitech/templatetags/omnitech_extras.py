@@ -18,3 +18,7 @@ def clp_currency(value):
 @register.filter
 def clp_price(value):
     return f"${clp_currency(value)}"
+
+@register.filter
+def class_name(value):
+    return value.__class__.__name__ if value else ''

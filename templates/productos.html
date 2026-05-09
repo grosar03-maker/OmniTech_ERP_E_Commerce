@@ -63,9 +63,20 @@
     
     <div class="products-container">
         <div class="products-header">
-            <p class="results-count">
-                {% if productos_fisicos %}{{ productos_fisicos.count }}{% else %}0{% endif %} hardware · 
-                {% if licencias %}{{ licencias|length }}{% else %}0{% endif %} software
+            <div class="products-search" style="display:flex;gap:8px;align-items:center;width:100%">
+                <div class="search-box glass-input" style="flex:1">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="productSearch" placeholder="Buscar productos..." oninput="filterProducts()" value="{{ query|default:'' }}">
+                </div>
+                <button type="button" onclick="document.getElementById('productSearch').value='';filterProducts()" class="filter-option" style="padding:8px 16px;border:none;cursor:pointer">✕ Limpiar</button>
+            </div>
+            <p class="results-count" id="resultsCount">
+                {% if query %}Resultados para "<strong>{{ query }}</strong>": {% endif %}
+                <span id="countHardware">{{ productos_fisicos.count|default:'0' }}</span> hardware · 
+                <span id="countSoftware">{{ licencias|length|default:'0' }}</span> software
             </p>
         </div>
         
@@ -84,7 +95,7 @@
         <div class="products-grid hardware-grid">
             {% for producto in productos_fisicos %}
             <article class="product-card glass-card">
-                <a href="{% url 'detalle_producto' producto.id %}" class="product-image-link">
+                <a href="{% url 'detalle_producto' 'fisico' producto.id %}" class="product-image-link">
                     <div class="product-image-wrapper">
                         <img src="{% if producto.imagen_url %}{{ producto.imagen_url }}{% else %}https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=600&h=400&fit=crop{% endif %}" alt="{{ producto.nombre }}" loading="lazy">
                     </div>
@@ -94,7 +105,7 @@
                         <span class="product-type-badge hardware">Hardware</span>
                         <span class="product-category">{{ producto.categoria }}</span>
                     </div>
-                    <a href="{% url 'detalle_producto' producto.id %}">
+                    <a href="{% url 'detalle_producto' 'fisico' producto.id %}">
                         <h3>{{ producto.nombre }}</h3>
                     </a>
                     <p class="product-description">{{ producto.descripcion|truncatechars:80 }}</p>
@@ -156,7 +167,7 @@
         <div class="products-grid software-grid">
             {% for licencia in licencias %}
             <article class="product-card glass-card software-card">
-                <a href="{% url 'detalle_producto' licencia.id %}" class="product-image-link">
+                <a href="{% url 'detalle_producto' 'software' licencia.id %}" class="product-image-link">
                     <div class="product-image-wrapper">
                         <img src="{% if licencia.imagen_url %}{{ licencia.imagen_url }}{% else %}https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&h=400&fit=crop{% endif %}" alt="{{ licencia.nombre }}" loading="lazy">
                     </div>
@@ -166,7 +177,7 @@
                         <span class="product-type-badge software">Software</span>
                         <span class="product-category">{{ licencia.plataforma }}</span>
                     </div>
-                    <a href="{% url 'detalle_producto' licencia.id %}">
+                    <a href="{% url 'detalle_producto' 'software' licencia.id %}">
                         <h3>{{ licencia.nombre }}</h3>
                     </a>
                     <p class="product-description">{{ licencia.descripcion|truncatechars:80 }}</p>
@@ -567,4 +578,45 @@
     }
 }
 </style>
+
+<script>
+function filterProducts() {
+    var q = document.getElementById('productSearch').value.toLowerCase();
+    var cards = document.querySelectorAll('.product-card');
+    var visibleHardware = 0, visibleSoftware = 0;
+
+    cards.forEach(function(card) {
+        var text = card.textContent.toLowerCase();
+        var match = !q || text.includes(q);
+        card.style.display = match ? '' : 'none';
+        if (match) {
+            if (card.classList.contains('software-card')) {
+                visibleSoftware++;
+            } else {
+                visibleHardware++;
+            }
+        }
+    });
+
+    document.getElementById('countHardware').textContent = visibleHardware;
+    document.getElementById('countSoftware').textContent = visibleSoftware;
+
+    var sections = document.querySelectorAll('.products-type-header');
+    sections.forEach(function(header) {
+        var grid = header.nextElementSibling;
+        if (grid && grid.classList.contains('products-grid')) {
+            var hasVisible = Array.from(grid.querySelectorAll('.product-card')).some(function(c) {
+                return c.style.display !== 'none';
+            });
+            header.style.display = hasVisible ? '' : 'none';
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('productSearch').value) {
+        filterProducts();
+    }
+});
+</script>
 {% endblock %}

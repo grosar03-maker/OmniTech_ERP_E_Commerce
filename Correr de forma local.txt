@@ -1,0 +1,4 @@
+$env:STRIPE_SECRET_KEY="sk_test_51TJPnb1Bg6LSaOB5rKhHA5U5CpYE2a5MLwHaUfVj6r8AjlJUCBwg5p2Esx8V14MFs4HF4AxenH8At0eLtVWkOszf0079aUwPU2"
+$env:STRIPE_PUBLIC_KEY="pk_test_51TJPnb1Bg6LSaOB5kc6pzah1I2zr9PRE4fJejBbjygAp0fGkMtm3SDzmL1BJ3AGPspYokIk9GS1B40bp5OwkOGV700W4tdXM27"
+$env:EMAIL_HOST_PASSWORD="jlio nvhr zejx xonz"
+python manage.py runserver
