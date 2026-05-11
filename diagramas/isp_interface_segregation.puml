@@ -1,0 +1,128 @@
+@startuml
+!theme monochrome
+skinparam backgroundColor #1a1a24
+skinparam classBackgroundColor #1e1e32
+skinparam classBorderColor #667eea
+skinparam classFontColor white
+skinparam classHeaderBackgroundColor #2d2d3a
+skinparam arrowColor #667eea
+skinparam noteBackgroundColor #2d2d3a
+skinparam noteBorderColor #764ba2
+skinparam noteFontColor white
+skinparam packageFontColor white
+
+title "Interface Segregation Principle (ISP)\nOmniTech - Interfaces segregadas por dominio"
+
+package "Catálogo" {
+    interface "ProductInterface" as PI {
+        + get_nombre(): str
+        + get_sku(): str
+        + get_precio(): Decimal
+        + get_estado(): ProductState
+    }
+}
+
+package "Inventario" {
+    interface "StockInterface" as SI {
+        + reservar(cantidad): bool
+        + liberar_reserva(cantidad)
+        + confirmar_reserva(cantidad)
+        + necesita_reabastecimiento(): bool
+        + get_stock_disponible(): int
+    }
+}
+
+package "Licencias" {
+    interface "LicenseInterface" as LI {
+        + entregar(): bool
+        + desencriptar_clave(): str
+        + esta_disponible(): bool
+        + reservar(orden): bool
+    }
+}
+
+package "Pedidos" {
+    interface "OrderInterface" as OI {
+        + calcular_total(): Decimal
+        + tiene_hardware(): bool
+        + tiene_software(): bool
+    }
+}
+
+package "Implementaciones" {
+    class PhysicalProduct {
+        + nombre
+        + sku
+        + precio
+        + peso
+        + stock_fisico
+        + stock_reservado
+        + umbral_minimo
+        + proveedor
+        ..
+        + reservar(cantidad): bool
+        + liberar_reserva(cantidad)
+        + confirmar_reserva(cantidad)
+        + necesita_reabastecimiento(): bool
+        + procesar_venta(cantidad): bool
+    }
+
+    class DigitalLicense {
+        + nombre
+        + sku
+        + precio
+        + clave_encriptada
+        + plataforma
+        + duracion_dias
+        + estado_licencia
+        ..
+        + entregar(): bool
+        + desencriptar_clave(): str
+        + esta_disponible(): bool
+        + reservar(orden): bool
+        + procesar_venta(cantidad, orden): bool
+    }
+
+    class Order {
+        + numero_pedido
+        + estado
+        + subtotal
+        + costo_envio
+        + total
+        + region_envio
+        ..
+        + calcular_total(): Decimal
+        + tiene_hardware(): bool
+        + tiene_software(): bool
+    }
+}
+
+PI <|.. PhysicalProduct : implements
+SI <|.. PhysicalProduct : implements
+
+PI <|.. DigitalLicense : implements
+LI <|.. DigitalLicense : implements
+
+OI <|.. Order : implements
+
+note right of PI
+  Solo métodos de catálogo:
+  nombre, sku, precio, estado
+end note
+
+note right of SI
+  Solo métodos de stock:
+  reservar, liberar, reabastecer
+end note
+
+note right of LI
+  Solo métodos de licencia:
+  entregar, desencriptar, ciclo de vida
+end note
+
+note right of OI
+  Solo métodos de pedido:
+  calcular total, bifurcación HW/SW
+end note
+
+@enduml

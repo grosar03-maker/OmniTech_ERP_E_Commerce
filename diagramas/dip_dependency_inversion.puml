@@ -1,0 +1,65 @@
+@startuml
+!theme monochrome
+skinparam backgroundColor #1a1a24
+skinparam componentBackgroundColor #1e1e32
+skinparam componentBorderColor #667eea
+skinparam componentFontColor white
+skinparam arrowColor #667eea
+skinparam packageBackgroundColor #2d2d3a
+skinparam packageBorderColor #764ba2
+skinparam packageFontColor white
+skinparam noteBackgroundColor #2d2d3a
+skinparam noteBorderColor #764ba2
+skinparam noteFontColor white
+skinparam databaseBackgroundColor #1e1e32
+skinparam databaseBorderColor #667eea
+skinparam databaseFontColor white
+
+title "Dependency Inversion Principle (DIP)\nOmniTech - Depender de abstracciones, no de concreciones"
+
+package "Capa de Presentación (Views)" {
+    component "views_cart.py" as V1
+    component "views_admin.py" as V2
+}
+
+note right of V1
+  Las vistas NO crean
+  modelos directamente
+end note
+
+package "Capa de Servicios (Abstracciones)" {
+    component "OrderService" as S1
+    component "CartService" as S2
+    component "EmailService" as S3
+    component "ProductFactory" as S4
+}
+
+note right of S1
+  Toda la lógica de negocio
+  está en los servicios
+end note
+
+package "Capa de Datos (Concreciones)" {
+    database "Modelos (DB)" as DB {
+        component "Order" as M1
+        component "OrderItem" as M2
+        component "PhysicalProduct" as M3
+        component "DigitalLicense" as M4
+        component "UserProfile" as M5
+    }
+}
+
+V1 --> S1 : "OrderService.procesar_pago()"
+V1 --> S2 : "CartService.calcular_totales()"
+V2 --> S4 : "ProductFactory.obtener_producto()"
+
+S1 --> S4 : "ProductFactory (resuelve modelo)"
+S1 --> M1 : "Order.objects (solo servicio)"
+S1 --> M3 : "PhysicalProduct (solo servicio)"
+
+note bottom of DB
+  Las vistas NO acceden a modelos.
+  Solo los servicios interactúan con la DB.
+end note
+
+@enduml

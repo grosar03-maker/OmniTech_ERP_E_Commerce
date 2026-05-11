@@ -1,0 +1,86 @@
+@startuml
+!theme monochrome
+skinparam backgroundColor #1a1a24
+skinparam classBackgroundColor #1e1e32
+skinparam classBorderColor #667eea
+skinparam classFontColor white
+skinparam classHeaderBackgroundColor #2d2d3a
+skinparam arrowColor #667eea
+skinparam noteBackgroundColor #2d2d3a
+skinparam noteBorderColor #764ba2
+skinparam noteFontColor white
+
+title "Open/Closed Principle (OCP)\nOmniTech - Clases abiertas para extensión, cerradas para modificación"
+
+abstract class "Product (abstracto)" as Product {
+    # nombre: str
+    # sku: str
+    # precio: Decimal
+    # categoria: str
+    # estado: ProductState
+    # imagen_url: str
+    ..
+    + {abstract} procesar_venta(cantidad): bool
+}
+
+note top of Product
+  Clase base abstracta.
+  Extender = crear nueva subclase.
+  Modificar = NO necesita cambios en services/views.
+end note
+
+class PhysicalProduct {
+    + peso: Decimal
+    + stock_fisico: int
+    + stock_reservado: int
+    + umbral_minimo: int
+    + proveedor: str
+    ..
+    + reservar(cantidad): bool
+    + liberar_reserva(cantidad)
+    + confirmar_reserva(cantidad)
+    + procesar_venta(cantidad): bool
+}
+
+note right of PhysicalProduct
+  procesar_venta():
+  1. confirmar_reserva(cantidad)
+  2. return True
+end note
+
+class DigitalLicense {
+    + clave_encriptada: str
+    + plataforma: str
+    + duracion_dias: int
+    + estado_licencia: LicenseState
+    ..
+    + entregar(): bool
+    + desencriptar_clave(): str
+    + procesar_venta(cantidad, orden): bool
+}
+
+note right of DigitalLicense
+  procesar_venta():
+  1. Buscar N claves DISPONIBLES
+  2. Si insuficientes → raise ValueError
+  3. Marcar CONSUMIDA c/u
+  4. return True
+end note
+
+class "NuevoTipoProducto" as NewType {
+    + ...
+    ..
+    + procesar_venta(cantidad): bool
+}
+
+note left of NewType
+  SÓLO agregar al PRODUCT_MAP
+  en factories.py.
+  Sin tocar services.py ni views.py.
+end note
+
+Product <|-- PhysicalProduct : extends
+Product <|-- DigitalLicense : extends
+Product <|.. NewType : <<future extends>>
+
+@enduml

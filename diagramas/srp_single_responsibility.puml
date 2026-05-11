@@ -1,0 +1,83 @@
+@startuml
+!theme monochrome
+skinparam backgroundColor #1a1a24
+skinparam componentBackgroundColor #1e1e32
+skinparam componentBorderColor #667eea
+skinparam componentFontColor white
+skinparam arrowColor #667eea
+skinparam packageBackgroundColor #2d2d3a
+skinparam packageBorderColor #764ba2
+skinparam packageFontColor white
+
+title "Single Responsibility Principle (SRP)\nOmniTech - Separación de vistas por dominio"
+
+package "views.py original\n(751 líneas, muchas responsabilidades)" as OLD {
+    component "Carrito\nCheckout\nAuth\nPerfil\nPedidos\nLicencias" as MIXED
+}
+
+package "Separación por SRP" {
+    package "views_cart.py" {
+        component "detalle_producto" as C1
+        component "agregar_al_carrito" as C2
+        component "actualizar_carrito" as C3
+        component "eliminar_del_carrito" as C4
+        component "checkout" as C5
+        component "crear_sesion_stripe" as C6
+        component "pago_exitoso" as C7
+        note right of C7
+            Responsabilidad:
+            Carrito, checkout y pago
+        end note
+    }
+
+    package "views_auth.py" {
+        component "login_view" as A1
+        component "registro" as A2
+        component "logout_view" as A3
+        component "password_reset_request" as A4
+        component "password_reset_confirm" as A5
+        component "reset_password_direct" as A6
+        note right of A6
+            Responsabilidad:
+            Autenticación y registro
+        end note
+    }
+
+    package "views_orders.py" {
+        component "mis_pedidos" as O1
+        component "detalle_pedido" as O2
+        component "mis_licencias" as O3
+        note right of O3
+            Responsabilidad:
+            Pedidos y licencias del usuario
+        end note
+    }
+
+    package "views_profile.py" {
+        component "perfil" as P1
+        note right of P1
+            Responsabilidad:
+            Perfil de usuario
+        end note
+    }
+
+    package "views_admin.py" {
+        component "dashboard" as AD1
+        component "editar_producto" as AD2
+        component "agregar_producto" as AD3
+        component "toggle_estado" as AD4
+        component "eliminar_producto" as AD5
+        note right of AD5
+            Responsabilidad:
+            Panel administrador
+        end note
+    }
+}
+
+OLD --> views_cart.py : "Se separó en 5 archivos"
+OLD --> views_auth.py
+OLD --> views_orders.py
+OLD --> views_profile.py
+OLD --> views_admin.py
+
+@enduml

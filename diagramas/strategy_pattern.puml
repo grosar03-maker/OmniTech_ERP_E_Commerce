@@ -1,0 +1,58 @@
+@startuml
+!theme monochrome
+skinparam backgroundColor #1a1a24
+skinparam classBackgroundColor #1e1e32
+skinparam classBorderColor #667eea
+skinparam classFontColor white
+skinparam classHeaderBackgroundColor #2d2d3a
+skinparam arrowColor #667eea
+skinparam noteBackgroundColor #2d2d3a
+skinparam noteBorderColor #764ba2
+skinparam noteFontColor white
+skinparam sequenceActorBorderColor #667eea
+skinparam sequenceActorBackgroundColor #2d2d3a
+skinparam sequenceActorFontColor white
+
+title "Strategy Pattern\nOmniTech - Estrategias de procesamiento de venta"
+
+class "OrderService" as Context {
+    + procesar_pago(order_id, carrito_temp)
+}
+
+note top of Context
+  El contexto (OrderService)
+  selecciona la estrategia según
+  el tipo de producto.
+end note
+
+interface "Estrategia\nprocesar_venta()" as Strategy {
+    + {abstract} procesar_venta(cantidad): bool
+}
+
+class "EstrategiaConcreta A\nHardware" as StrategyA {
+    + procesar_venta(cantidad): bool
+}
+
+class "EstrategiaConcreta B\nLicencia Digital" as StrategyB {
+    + procesar_venta(cantidad, orden): bool
+}
+
+Context --> Strategy : <<usa>>
+Strategy <|-- StrategyA : implements
+Strategy <|-- StrategyB : implements
+
+note bottom of StrategyA
+  Algoritmo:
+  confirmar_reserva(cantidad)
+  stock_fisico -= cantidad
+  stock_reservado -= cantidad
+end note
+
+note bottom of StrategyB
+  Algoritmo:
+  Buscar cantidad claves DISPONIBLES
+  Marcar como CONSUMIDAS
+  Asignar orden_compra
+end note
+
+@enduml

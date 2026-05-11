@@ -1,0 +1,73 @@
+@startuml
+!theme monochrome
+skinparam backgroundColor #1a1a24
+skinparam classBackgroundColor #1e1e32
+skinparam classBorderColor #667eea
+skinparam classFontColor white
+skinparam classHeaderBackgroundColor #2d2d3a
+skinparam arrowColor #667eea
+skinparam noteBackgroundColor #2d2d3a
+skinparam noteBorderColor #764ba2
+skinparam noteFontColor white
+
+title "Template Method Pattern\nOmniTech - procesar_venta() como método plantilla"
+
+abstract class "Product" as Product {
+    ..
+    + {abstract} procesar_venta(cantidad): bool
+}
+
+note top of Product
+  Template Method:
+  Define el esqueleto del algoritmo.
+  Las subclases implementan los pasos.
+end note
+
+class PhysicalProduct {
+    + procesar_venta(cantidad): bool
+    - confirmar_reserva(cantidad)
+}
+
+note left of PhysicalProduct
+  Paso 1: confirmar_reserva(cantidad)
+  Paso 2: return True
+  
+  stock_fisico -= cantidad
+  stock_reservado -= cantidad
+end note
+
+class DigitalLicense {
+    + procesar_venta(cantidad, orden): bool
+    - entregar(): bool
+}
+
+note right of DigitalLicense
+  Paso 1: Buscar N claves DISPONIBLES
+  Paso 2: Si count < cantidad → raise
+  Paso 3: Para cada clave:
+    - estado = CONSUMIDA
+    - fecha_asignacion = now
+    - orden_compra = orden
+  Paso 4: save() c/u
+  Paso 5: return True
+end note
+
+class "OrderService" as Service {
+    + procesar_pago(order_id, carrito_temp)
+}
+
+Product <|-- PhysicalProduct : implements
+Product <|-- DigitalLicense : implements
+
+Service --> Product : llama procesar_venta()
+
+note bottom of Service
+  for item in carrito_temp:
+    producto = ProductFactory.\n      obtener_producto_con_lock(tipo, id)
+    producto.procesar_venta(cantidad)
+  
+  ¡Misma llamada, diferentes
+  implementaciones!
+end note
+
+@enduml

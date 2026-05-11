@@ -1,0 +1,106 @@
+@startuml
+!theme monochrome
+skinparam backgroundColor #1a1a24
+skinparam componentBackgroundColor #1e1e32
+skinparam componentBorderColor #667eea
+skinparam componentFontColor white
+skinparam arrowColor #667eea
+skinparam packageBackgroundColor #2d2d3a
+skinparam packageBorderColor #764ba2
+skinparam packageFontColor white
+skinparam noteBackgroundColor #2d2d3a
+skinparam noteBorderColor #764ba2
+skinparam noteFontColor white
+skinparam databaseBackgroundColor #1e1e32
+skinparam databaseBorderColor #667eea
+skinparam databaseFontColor white
+
+title "Service Layer Pattern\nOmniTech - Capa de servicios intermedia"
+
+package "Presentation Layer" as PRES {
+    component "views_cart.py" as VC
+    component "views_auth.py" as VA
+    component "views_orders.py" as VO
+    component "views_profile.py" as VP
+    component "views_admin.py" as VAD
+}
+
+package "Service Layer" as SVC {
+    component "OrderService" as OS <<Singleton>> {
+        + crear_pedido()
+        + procesar_pago()
+        + crear_pedido_para_stripe()
+        + calcular_costo_envio()
+    }
+
+    component "CartService" as CS <<Singleton>> {
+        + get_carrito()
+        + save_carrito()
+        + calcular_totales()
+    }
+
+    component "EmailService" as ES <<Singleton>> {
+        + enviar_boleta()
+        + notificar_stock_bajo()
+    }
+
+    component "ProductFactory" as PF {
+        + obtener_producto()
+        + obtener_producto_o_404()
+        + obtener_producto_con_lock()
+        + es_tipo_fisico()
+    }
+
+    component "StripeService" as SS {
+        + crear_checkout_session()
+    }
+}
+
+note right of OS
+  Orquestación transaccional
+  de pedidos con ACID
+end note
+
+note right of CS
+  Gestión del carrito
+  en sesión
+end note
+
+note right of PF
+  Factory Method para
+  resolución de modelos
+end note
+
+package "Data Layer" as DATA {
+    database "Django ORM" as DB {
+        component "Order" as D1
+        component "OrderItem" as D2
+        component "PhysicalProduct" as D3
+        component "DigitalLicense" as D4
+        component "UserProfile" as D5
+    }
+    database "Session" as SES {
+        component "Carrito" as S1
+    }
+    component "Email (SMTP)" as MAIL
+    component "Stripe API" as STRIPE
+}
+
+VC --> OS : usa
+VC --> CS : usa
+VC --> PF : usa
+VC --> SS : usa
+VO --> OS : usa
+VAD --> PF : usa
+
+OS --> PF : resuelve modelo
+OS --> DB : CRUD pedidos
+OS --> MAIL : notificaciones
+
+CS --> SES : carrito en sesión
+
+SS --> STRIPE : API pagos
+
+ES --> MAIL : envía correos
+
+@enduml
