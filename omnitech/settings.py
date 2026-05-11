@@ -111,6 +111,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'grosar2006@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_TIMEOUT = 5
 EMAIL_FROM = 'OmniTech <noreply@omnitech.cl>'
 DEFAULT_FROM_EMAIL = 'OmniTech <noreply@omnitech.cl>'
 
