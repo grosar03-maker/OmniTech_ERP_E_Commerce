@@ -6,7 +6,7 @@ Separación de lógica de presentación aplicando SRP
 from django.template.loader import get_template
 
 
-def renderizar_boleta(pedido):
+def renderizar_boleta(pedido, logo_url=''):
     """
     Renderiza la boleta usando templates de Django.
     SRP: Esta función solo maneja la presentación, no la lógica de negocio.
@@ -109,10 +109,8 @@ def generar_html_fallback(pedido, items_list, cliente_nombre, email_destino, fec
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                     <td>
-                        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">
-                            <span style="color: #f1f1f3;">Omni</span><span style="color: #a78bfa;">Tech</span>
-                        </div>
-                        <div style="font-size: 11px; color: #6b7280; margin-top: 3px; letter-spacing: 1px; text-transform: uppercase;">Comprobante de compra</div>
+                        <img src="{logo_url}" alt="OmniTech" style="max-width: 140px; height: auto; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 8px; letter-spacing: 1px; text-transform: uppercase;">Comprobante de compra</div>
                     </td>
                     <td align="right">
                         <div style="display:inline-block; background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3); color:#4ade80; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; letter-spacing:0.3px;">

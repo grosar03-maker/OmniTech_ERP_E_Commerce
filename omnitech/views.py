@@ -14,6 +14,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.templatetags.static import static
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.http import require_POST
@@ -482,6 +483,7 @@ def password_reset_request(request):
         if user is not None:
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
+            logo_url = request.build_absolute_uri(static('img/logo_web.png'))
 
             reset_url = request.build_absolute_uri(f'/password-reset/confirm/{uid}/{token}/')
 
@@ -495,10 +497,8 @@ def password_reset_request(request):
 <body style="margin: 0; padding: 0; background: #000; font-family: 'Segoe UI', -apple-system, sans-serif;">
     <div style="max-width: 480px; margin: 0 auto; background: #0a0a0f; padding: 32px 24px;">
         <div style="text-align: center; padding-bottom: 24px; border-bottom: 1px solid #2d2d3a;">
-            <h1 style="margin: 0 0 6px 0; font-size: 24px; font-weight: 700; color: #fff;">
-                <span style="background: linear-gradient(135deg, #fff 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">OmniTech</span>
-            </h1>
-            <p style="margin: 0; font-size: 12px; color: #86868b;">Restablecer contrasena</p>
+            <img src="{logo_url}" alt="OmniTech" style="max-width: 160px; height: auto; border-radius: 8px;">
+            <p style="margin: 8px 0 0; font-size: 12px; color: #86868b;">Restablecer contrasena</p>
         </div>
 
         <div style="padding: 24px 0;">

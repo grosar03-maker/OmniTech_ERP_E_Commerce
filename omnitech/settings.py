@@ -95,6 +95,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SITE_NAME = 'OmniTech'
+SITE_URL = os.environ.get('SITE_URL', 'http://localhost:8000')
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'

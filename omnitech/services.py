@@ -220,6 +220,10 @@ class EmailService:
     """Servicio para envío de correos (SRP)."""
 
     @staticmethod
+    def _logo_url():
+        return f"{settings.SITE_URL}/static/img/logo_web.png"
+
+    @staticmethod
     def enviar_boleta(pedido):
         """Envía la boleta por correo."""
         from .services_template import renderizar_boleta
@@ -230,7 +234,7 @@ class EmailService:
             return False, 'No se encontró email'
 
         try:
-            html_boleta = renderizar_boleta(pedido)
+            html_boleta = renderizar_boleta(pedido, logo_url=EmailService._logo_url())
 
             send_mail(
                 subject=f'OmniTech - Comprobante de compra {pedido.numero_pedido}',
@@ -269,7 +273,7 @@ def generar_html_boleta(pedido):
     """Función legacy - ahora delegamos al template."""
     from .services_template import renderizar_boleta
 
-    return renderizar_boleta(pedido)
+    return renderizar_boleta(pedido, logo_url=EmailService._logo_url())
 
 
 def enviar_boleta_pedido(pedido):
@@ -299,6 +303,8 @@ def enviar_claves_licencia(pedido):
 
     if not email_destino:
         return False, 'No se encontró email del cliente'
+
+    logo_url = f"{settings.SITE_URL}/static/img/logo_web.png"
 
     try:
         claves_info = []
@@ -396,10 +402,8 @@ def generar_html_claves(claves, numero_pedido):
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                     <td>
-                        <div style="font-size:26px; font-weight:800; letter-spacing:-0.5px;">
-                            <span style="color:#f1f1f3;">Omni</span><span style="color:#a78bfa;">Tech</span>
-                        </div>
-                        <div style="font-size:11px; color:#6b7280; margin-top:3px; letter-spacing:1px; text-transform:uppercase;">Tus claves de licencia</div>
+                        <img src="{logo_url}" alt="OmniTech" style="max-width: 140px; height: auto; border-radius: 8px;">
+                        <div style="font-size:11px; color:#6b7280; margin-top:8px; letter-spacing:1px; text-transform:uppercase;">Tus claves de licencia</div>
                     </td>
                     <td align="right">
                         <div style="display:inline-block; background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3); color:#4ade80; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700;">
