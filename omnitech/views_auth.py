@@ -68,20 +68,22 @@ def login_view(request):
         return redirect('home')
 
     if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
+        username_input = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
 
-        try:
-            user = User.objects.get(username=username)
+        user = User.objects.filter(username=username_input).first()
+        if user is None:
+            user = User.objects.filter(email=username_input).first()
 
+        if user is not None:
             if user.check_password(password):
                 login(request, user)
-                messages.success(request, f'Bienvenido {username}!')
+                messages.success(request, f'Bienvenido {user.username}!')
                 return redirect(request.GET.get('next', 'home'))
             else:
                 messages.error(request, 'Contrasena incorrecta')
                 return render(request, 'login.html')
-        except User.DoesNotExist:
+        else:
             messages.error(request, 'Usuario no existe')
             return render(request, 'login.html')
 
@@ -181,11 +183,6 @@ def password_reset_confirm(request, uidb64, token):
             password = request.POST.get('password', '')
             password2 = request.POST.get('password2', '')
 
-            print(f'[DEBUG] Form data: {dict(request.POST)}')
-            print(f'[DEBUG] password field: {repr(password)}')
-            print(f'[DEBUG] user: {user.username}, pk: {user.pk}')
-            print(f'[DEBUG] old hash: {user.password[:40]}...')
-
             if len(password) < 8:
                 messages.error(request, 'La contrasena debe tener al menos 8 caracteres.')
                 return render(request, 'password_reset_confirm.html', {'uidb64': uidb64, 'token': token})
@@ -194,16 +191,8 @@ def password_reset_confirm(request, uidb64, token):
                 messages.error(request, 'Las contrasenas no coinciden.')
                 return render(request, 'password_reset_confirm.html', {'uidb64': uidb64, 'token': token})
 
-            from django.contrib.auth.hashers import make_password
-
-            nuevo_hash = make_password(password)
-
-            User.objects.filter(pk=user.pk).update(password=nuevo_hash)
-
-            user = User.objects.get(pk=user.pk)
-
-            print(f'[DEBUG] new hash: {user.password[:40]}...')
-            print(f'[DEBUG] verify check_password: {user.check_password(password)}')
+            user.set_password(password)
+            user.save()
 
             messages.success(request, 'Contrasena restablecida. Intenta iniciar sesion.')
             return redirect('login')
