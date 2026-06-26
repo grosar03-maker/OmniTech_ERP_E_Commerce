@@ -4,6 +4,7 @@ Django Settings Configuration
 """
 
 import os
+from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -107,8 +108,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
-
-from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),

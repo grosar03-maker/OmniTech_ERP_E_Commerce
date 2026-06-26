@@ -172,5 +172,5 @@ Genera el código limpio y profesional para models.py.
 """
 
 # Save to PDF
-output_path = "OmniTech_Arquitectura_Especificacion.pdf"
+output_path = 'OmniTech_Arquitectura_Especificacion.pdf'
 HTML(string=html_content).write_pdf(output_path)

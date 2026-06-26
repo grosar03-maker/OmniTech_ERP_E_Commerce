@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('omnitech', '0002_digitallicense_imagen_url_physicalproduct_imagen_url'),
     ]
@@ -14,6 +13,15 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='userprofile',
             name='rut',
-            field=models.CharField(blank=True, max_length=12, null=True, validators=[django.core.validators.RegexValidator(message='RUT debe tener formato XX.XXX.XXX-X', regex='^\\d{7,8}-[\\dkK]$')]),
+            field=models.CharField(
+                blank=True,
+                max_length=12,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message='RUT debe tener formato XX.XXX.XXX-X', regex='^\\d{7,8}-[\\dkK]$'
+                    )
+                ],
+            ),
         ),
     ]

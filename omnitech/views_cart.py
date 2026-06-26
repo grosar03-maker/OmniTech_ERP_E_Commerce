@@ -3,36 +3,29 @@ Views: Catálogo y Carrito - OmniTech
 SRP: Solo vistas relacionadas con navegación de productos y compras
 """
 
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.contrib import messages
-from django.conf import settings
-from django.db import models
-from decimal import Decimal
 import json
 import logging
-logger = logging.getLogger(__name__)
 
-from .models import (
-    PhysicalProduct, DigitalLicense,
-    ProductState, LicenseState, OrderState
-)
-from .services import (
-    enviar_boleta_pedido, OrderService, CartService, enviar_claves_licencia
-)
-from .stripe_service import crear_checkout_session
+from django.conf import settings
+from django.contrib import messages
+from django.db import models
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
+
 from .factories import ProductFactory
+from .models import DigitalLicense, LicenseState, PhysicalProduct, ProductState
+from .services import CartService, OrderService, enviar_boleta_pedido, enviar_claves_licencia
+from .stripe_service import crear_checkout_session
+
+logger = logging.getLogger(__name__)
 
 
 def home(request):
-    productos_fisicos = PhysicalProduct.objects.filter(
-        estado=ProductState.ACTIVO
-    ).order_by('-fecha_creacion')[:8]
+    productos_fisicos = PhysicalProduct.objects.filter(estado=ProductState.ACTIVO).order_by('-fecha_creacion')[:8]
 
     licencias = DigitalLicense.objects.filter(
-        estado=ProductState.ACTIVO,
-        estado_licencia=LicenseState.DISPONIBLE
+        estado=ProductState.ACTIVO, estado_licencia=LicenseState.DISPONIBLE
     ).order_by('-fecha_creacion')[:8]
 
     context = {
@@ -55,16 +48,16 @@ def productos(request):
 
     if q:
         base_fisicos = base_fisicos.filter(
-            models.Q(nombre__icontains=q) |
-            models.Q(sku__icontains=q) |
-            models.Q(descripcion__icontains=q) |
-            models.Q(categoria__icontains=q)
+            models.Q(nombre__icontains=q)
+            | models.Q(sku__icontains=q)
+            | models.Q(descripcion__icontains=q)
+            | models.Q(categoria__icontains=q)
         )
         base_licencias = base_licencias.filter(
-            models.Q(nombre__icontains=q) |
-            models.Q(sku__icontains=q) |
-            models.Q(descripcion__icontains=q) |
-            models.Q(categoria__icontains=q)
+            models.Q(nombre__icontains=q)
+            | models.Q(sku__icontains=q)
+            | models.Q(descripcion__icontains=q)
+            | models.Q(categoria__icontains=q)
         )
 
     if tipo == 'hardware' or tipo == '':
@@ -135,22 +128,26 @@ def agregar_al_carrito(request):
         if item_existente is not None:
             carrito[item_existente]['cantidad'] += cantidad
         else:
-            carrito.append({
-                'producto_id': producto_id,
-                'tipo': tipo,
-                'nombre': producto.nombre,
-                'precio': float(precio),
-                'cantidad': cantidad,
-            })
+            carrito.append(
+                {
+                    'producto_id': producto_id,
+                    'tipo': tipo,
+                    'nombre': producto.nombre,
+                    'precio': float(precio),
+                    'cantidad': cantidad,
+                }
+            )
 
         CartService.save_carrito(request, carrito)
         totales = CartService.calcular_totales(carrito)
 
-        return JsonResponse({
-            'success': True,
-            'carrito_count': totales['cantidad_items'],
-            'message': f'{producto.nombre} agregado al carrito'
-        })
+        return JsonResponse(
+            {
+                'success': True,
+                'carrito_count': totales['cantidad_items'],
+                'message': f'{producto.nombre} agregado al carrito',
+            }
+        )
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
@@ -193,8 +190,9 @@ def eliminar_del_carrito(request):
         tipo = data.get('tipo')
 
         carrito = CartService.get_carrito(request)
-        carrito = [item for item in carrito
-                   if not (item.get('producto_id') == producto_id and item.get('tipo') == tipo)]
+        carrito = [
+            item for item in carrito if not (item.get('producto_id') == producto_id and item.get('tipo') == tipo)
+        ]
 
         CartService.save_carrito(request, carrito)
         totales = CartService.calcular_totales(carrito)
@@ -267,9 +265,7 @@ def crear_sesion_stripe(request):
             messages.error(request, 'El correo es requerido')
             return redirect('checkout')
 
-        order, _ = OrderService.crear_pedido_para_stripe(
-            request, carrito, email, region, observaciones
-        )
+        order, _ = OrderService.crear_pedido_para_stripe(request, carrito, email, region, observaciones)
 
         totales = CartService.calcular_totales(carrito)
 
@@ -303,6 +299,7 @@ def pago_exitoso(request):
 
         if not carrito_temp:
             from .models import Order
+
             order = Order.objects.get(numero_pedido=order_id)
         else:
             order, success, error_msg = OrderService.procesar_pago(order_id, carrito_temp)
@@ -312,15 +309,15 @@ def pago_exitoso(request):
 
             boleta_ok, boleta_msg = enviar_boleta_pedido(order)
             if boleta_ok:
-                logger.info(f"[CORREO] Boleta enviada correctamente: {boleta_msg}")
+                logger.info(f'[CORREO] Boleta enviada correctamente: {boleta_msg}')
             else:
-                logger.error(f"[CORREO] Fallo al enviar boleta: {boleta_msg}")
+                logger.error(f'[CORREO] Fallo al enviar boleta: {boleta_msg}')
 
             claves_ok, claves_msg = enviar_claves_licencia(order)
             if claves_ok:
-                logger.info(f"[CORREO] Claves enviadas correctamente: {claves_msg}")
+                logger.info(f'[CORREO] Claves enviadas correctamente: {claves_msg}')
             else:
-                logger.error(f"[CORREO] Fallo al enviar claves: {claves_msg}")
+                logger.error(f'[CORREO] Fallo al enviar claves: {claves_msg}')
 
         CartService.save_carrito(request, [])
 
@@ -329,10 +326,8 @@ def pago_exitoso(request):
 
     except Exception as e:
         import traceback
-        print(f"Error en pago_exitoso: {e}")
+
+        print(f'Error en pago_exitoso: {e}')
         traceback.print_exc()
         messages.error(request, 'Error al procesar el pago')
         return redirect('home')
-
-
-

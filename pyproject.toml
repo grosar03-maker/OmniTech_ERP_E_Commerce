@@ -4,6 +4,10 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B"]
+ignore = ["E501"]  # inline CSS en templates de email
+
+[tool.ruff.lint.per-file-ignores]
+"populate_db.py" = ["E402"]  # imports after django.setup()
 
 [tool.ruff.format]
 quote-style = "single"

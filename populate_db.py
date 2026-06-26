@@ -5,37 +5,34 @@ OmniTech ERP & E-Commerce
 
 import os
 import sys
+
 import django
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'omnitech.settings')
 django.setup()
 
-from django.contrib.auth.models import User
-from omnitech.models import (
-    PhysicalProduct, DigitalLicense, 
-    ProductState, LicenseState
-)
 from decimal import Decimal
 
+from django.contrib.auth.models import User
+
+from omnitech.models import DigitalLicense, LicenseState, PhysicalProduct
+
+
 def populate_database():
-    print("=" * 50)
-    print("OmniTech - Poblando Base de Datos")
-    print("=" * 50)
-    
-    print("\n[1/4] Creando usuario administrador...")
+    print('=' * 50)
+    print('OmniTech - Poblando Base de Datos')
+    print('=' * 50)
+
+    print('\n[1/4] Creando usuario administrador...')
     if not User.objects.filter(username='admin').exists():
-        admin = User.objects.create_superuser(
-            username='admin',
-            email='admin@omnitech.cl',
-            password='admin123'
-        )
-        print(f"  ✓ Admin creado: admin / admin123")
+        User.objects.create_superuser(username='admin', email='admin@omnitech.cl', password='admin123')
+        print('  ✓ Admin creado: admin / admin123')
     else:
-        print("  - Admin ya existe")
-    
-    print("\n[2/4] Creando productos físicos (Hardware)...")
-    
+        print('  - Admin ya existe')
+
+    print('\n[2/4] Creando productos físicos (Hardware)...')
+
     hardware_products = [
         {
             'nombre': 'MacBook Pro 14" M3 Pro',
@@ -49,7 +46,7 @@ def populate_database():
             'stock_reservado': 0,
             'umbral_minimo': 5,
             'proveedor': 'Apple Chile',
-            'ubicacion_bodega': 'A-12-03'
+            'ubicacion_bodega': 'A-12-03',
         },
         {
             'nombre': 'iPhone 15 Pro Max',
@@ -63,7 +60,7 @@ def populate_database():
             'stock_reservado': 0,
             'umbral_minimo': 8,
             'proveedor': 'Apple Chile',
-            'ubicacion_bodega': 'A-15-01'
+            'ubicacion_bodega': 'A-15-01',
         },
         {
             'nombre': 'Sony WH-1000XM5',
@@ -77,7 +74,7 @@ def populate_database():
             'stock_reservado': 0,
             'umbral_minimo': 10,
             'proveedor': 'Sony Chile',
-            'ubicacion_bodega': 'B-05-02'
+            'ubicacion_bodega': 'B-05-02',
         },
         {
             'nombre': 'Samsung Monitor Odyssey G9',
@@ -91,7 +88,7 @@ def populate_database():
             'stock_reservado': 0,
             'umbral_minimo': 3,
             'proveedor': 'Samsung Chile',
-            'ubicacion_bodega': 'C-01-01'
+            'ubicacion_bodega': 'C-01-01',
         },
         {
             'nombre': 'Teclado Mecánico Keychron Q1 Pro',
@@ -105,7 +102,7 @@ def populate_database():
             'stock_reservado': 0,
             'umbral_minimo': 15,
             'proveedor': 'Keychron',
-            'ubicacion_bodega': 'B-08-04'
+            'ubicacion_bodega': 'B-08-04',
         },
         {
             'nombre': 'Mouse Logitech MX Master 3S',
@@ -119,7 +116,7 @@ def populate_database():
             'stock_reservado': 0,
             'umbral_minimo': 20,
             'proveedor': 'Logitech',
-            'ubicacion_bodega': 'B-08-05'
+            'ubicacion_bodega': 'B-08-05',
         },
         {
             'nombre': 'Webcam Logitech Brio 4K',
@@ -133,7 +130,7 @@ def populate_database():
             'stock_reservado': 0,
             'umbral_minimo': 10,
             'proveedor': 'Logitech',
-            'ubicacion_bodega': 'B-08-06'
+            'ubicacion_bodega': 'B-08-06',
         },
         {
             'nombre': 'NVIDIA RTX 4090 Founders Edition',
@@ -147,34 +144,30 @@ def populate_database():
             'stock_reservado': 0,
             'umbral_minimo': 2,
             'proveedor': 'NVIDIA Chile',
-            'ubicacion_bodega': 'D-02-01'
+            'ubicacion_bodega': 'D-02-01',
         },
     ]
-    
+
     for product_data in hardware_products:
-        product, created = PhysicalProduct.objects.get_or_create(
-            sku=product_data['sku'],
-            defaults=product_data
-        )
+        product, created = PhysicalProduct.objects.get_or_create(sku=product_data['sku'], defaults=product_data)
         if created:
-            print(f"  ✓ {product.nombre}")
+            print(f'  ✓ {product.nombre}')
         else:
-            print(f"  - {product.nombre} (ya existe)")
-    
-    print("\n[3/4] Creando licencias digitales (Software)...")
-    
+            print(f'  - {product.nombre} (ya existe)')
+
+    print('\n[3/4] Creando licencias digitales (Software)...')
+
     def encriptar_clave(clave):
-        from cryptography.fernet import Fernet
         import base64
         import hashlib
+
+        from cryptography.fernet import Fernet
         from django.conf import settings
-        
-        key = base64.urlsafe_b64encode(
-            hashlib.sha256(settings.SECRET_KEY.encode()).digest()
-        )
+
+        key = base64.urlsafe_b64encode(hashlib.sha256(settings.SECRET_KEY.encode()).digest())
         f = Fernet(key)
         return f.encrypt(clave.encode()).decode()
-    
+
     software_licenses = [
         {
             'nombre': 'Microsoft 365 Family (1 Año)',
@@ -273,44 +266,40 @@ def populate_database():
             'estado_licencia': LicenseState.DISPONIBLE,
         },
     ]
-    
+
     for license_data in software_licenses:
-        license_obj, created = DigitalLicense.objects.get_or_create(
-            sku=license_data['sku'],
-            defaults=license_data
-        )
+        license_obj, created = DigitalLicense.objects.get_or_create(sku=license_data['sku'], defaults=license_data)
         if created:
-            print(f"  ✓ {license_obj.nombre}")
+            print(f'  ✓ {license_obj.nombre}')
         else:
-            print(f"  - {license_obj.nombre} (ya existe)")
-    
-    print("\n[4/4] Creando usuarios de prueba...")
-    
+            print(f'  - {license_obj.nombre} (ya existe)')
+
+    print('\n[4/4] Creando usuarios de prueba...')
+
     test_users = [
         {'username': 'cliente1', 'email': 'cliente1@test.cl', 'password': 'cliente123'},
         {'username': 'gustavo', 'email': 'gustavo@test.cl', 'password': 'gustavo123'},
     ]
-    
+
     for user_data in test_users:
         if not User.objects.filter(username=user_data['username']).exists():
-            user = User.objects.create_user(
-                username=user_data['username'],
-                email=user_data['email'],
-                password=user_data['password']
+            User.objects.create_user(
+                username=user_data['username'], email=user_data['email'], password=user_data['password']
             )
-            print(f"  ✓ Usuario: {user_data['username']}")
+            print(f'  ✓ Usuario: {user_data["username"]}')
         else:
-            print(f"  - Usuario: {user_data['username']} (ya existe)")
-    
-    print("\n" + "=" * 50)
-    print("¡Base de datos poblada exitosamente!")
-    print("=" * 50)
-    print("\nCredenciales de acceso:")
-    print("  Admin: admin / admin123")
-    print("  Cliente: cliente1 / cliente123")
-    print("\nPara ejecutar el servidor:")
-    print("  python manage.py runserver")
-    print("=" * 50)
+            print(f'  - Usuario: {user_data["username"]} (ya existe)')
+
+    print('\n' + '=' * 50)
+    print('¡Base de datos poblada exitosamente!')
+    print('=' * 50)
+    print('\nCredenciales de acceso:')
+    print('  Admin: admin / admin123')
+    print('  Cliente: cliente1 / cliente123')
+    print('\nPara ejecutar el servidor:')
+    print('  python manage.py runserver')
+    print('=' * 50)
+
 
 if __name__ == '__main__':
     populate_database()

@@ -3,11 +3,11 @@ Views: Pedidos y Licencias - OmniTech
 SRP: Solo vistas relacionadas con pedidos y licencias del usuario
 """
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Order, DigitalLicense
+from .models import DigitalLicense, Order
 
 
 def detalle_pedido(request, numero_pedido):
@@ -35,8 +35,6 @@ def mis_pedidos(request):
 
 @login_required
 def mis_licencias(request):
-    licencias = DigitalLicense.objects.filter(
-        orden_compra__usuario=request.user
-    ).order_by('-fecha_asignacion')
+    licencias = DigitalLicense.objects.filter(orden_compra__usuario=request.user).order_by('-fecha_asignacion')
     context = {'licencias': licencias}
     return render(request, 'mis_licencias.html', context)

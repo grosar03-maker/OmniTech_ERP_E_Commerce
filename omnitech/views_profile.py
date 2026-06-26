@@ -3,11 +3,10 @@ Views: Perfil de Usuario - OmniTech
 SRP: Solo vistas relacionadas con el perfil del usuario
 """
 
-from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
+from django.shortcuts import render
 
-from .models import UserProfile, Order
+from .models import Order, UserProfile
 
 
 @login_required

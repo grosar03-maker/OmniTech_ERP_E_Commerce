@@ -5,7 +5,8 @@ OCP: Agregar un nuevo tipo de producto no requiere modificar views ni services.
 """
 
 from django.shortcuts import get_object_or_404
-from .models import PhysicalProduct, DigitalLicense
+
+from .models import DigitalLicense, PhysicalProduct
 
 
 class ProductFactory:
@@ -24,7 +25,7 @@ class ProductFactory:
     def obtener_modelo(cls, tipo):
         model = cls.PRODUCT_MAP.get(tipo)
         if not model:
-            raise ValueError(f"Tipo de producto desconocido: {tipo}")
+            raise ValueError(f'Tipo de producto desconocido: {tipo}')
         return model
 
     @classmethod

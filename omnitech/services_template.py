@@ -3,7 +3,6 @@ Email Template Service - OmniTech
 Separación de lógica de presentación aplicando SRP
 """
 
-from django.template import Template, Context
 from django.template.loader import get_template
 
 
@@ -14,33 +13,37 @@ def renderizar_boleta(pedido):
     """
     # Recolectar datos del pedido
     items = pedido.items.all()
-    
+
     items_list = []
     for item in items:
         if item.producto_fisico:
-            items_list.append({
-                'nombre': item.producto_fisico.nombre,
-                'tipo': 'Hardware',
-                'cantidad': item.cantidad,
-                'precio_unitario': float(item.precio_unitario),
-                'subtotal': float(item.precio_unitario * item.cantidad),
-                'imagen': getattr(item.producto_fisico, 'imagen_url', ''),
-            })
+            items_list.append(
+                {
+                    'nombre': item.producto_fisico.nombre,
+                    'tipo': 'Hardware',
+                    'cantidad': item.cantidad,
+                    'precio_unitario': float(item.precio_unitario),
+                    'subtotal': float(item.precio_unitario * item.cantidad),
+                    'imagen': getattr(item.producto_fisico, 'imagen_url', ''),
+                }
+            )
         else:
-            items_list.append({
-                'nombre': item.licencia.nombre,
-                'tipo': 'Software/Licencia',
-                'cantidad': item.cantidad,
-                'precio_unitario': float(item.precio_unitario),
-                'subtotal': float(item.precio_unitario * item.cantidad),
-                'imagen': getattr(item.licencia, 'imagen_url', ''),
-            })
-    
+            items_list.append(
+                {
+                    'nombre': item.licencia.nombre,
+                    'tipo': 'Software/Licencia',
+                    'cantidad': item.cantidad,
+                    'precio_unitario': float(item.precio_unitario),
+                    'subtotal': float(item.precio_unitario * item.cantidad),
+                    'imagen': getattr(item.licencia, 'imagen_url', ''),
+                }
+            )
+
     # Datos del cliente
     email_destino = pedido.email_invitado or (pedido.usuario.email if pedido.usuario else '')
     cliente_nombre = pedido.usuario.username if pedido.usuario else 'Cliente Invitado'
     fecha_formato = pedido.fecha_creacion.strftime('%d de %B de %Y, %H:%M')
-    
+
     # Intentar usar template externo o generar HTML
     try:
         template = get_template('email/boleta.html')
@@ -59,7 +62,6 @@ def renderizar_boleta(pedido):
 
 def generar_html_fallback(pedido, items_list, cliente_nombre, email_destino, fecha):
     """Genera HTML de fallback si el template no existe."""
-    from django.conf import settings
 
     items_html = ''
     for item in items_list:
@@ -84,10 +86,10 @@ def generar_html_fallback(pedido, items_list, cliente_nombre, email_destino, fec
         </tr>
         '''
 
-    costo_envio_display = "Gratis ✓" if float(pedido.costo_envio or 0) == 0 else f"${float(pedido.costo_envio):,.0f}"
+    costo_envio_display = 'Gratis ✓' if float(pedido.costo_envio or 0) == 0 else f'${float(pedido.costo_envio):,.0f}'
     costo_color = '#4ade80' if float(pedido.costo_envio or 0) == 0 else '#d4d4d8'
 
-    html = f'''
+    html = f"""
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -222,5 +224,5 @@ def generar_html_fallback(pedido, items_list, cliente_nombre, email_destino, fec
 </table>
 </body>
 </html>
-    '''
+    """
     return html

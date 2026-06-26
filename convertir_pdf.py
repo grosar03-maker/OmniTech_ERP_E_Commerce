@@ -2,20 +2,18 @@
 Script para convertir la documentación de Stripe a PDF
 """
 
-import markdown
 from pathlib import Path
 
+import markdown
+
 # Leer el markdown
-md_file = Path("DOCUMENTACION_STRIPE.md")
-html_file = Path("DOCUMENTACION_STRIPE.html")
+md_file = Path('DOCUMENTACION_STRIPE.md')
+html_file = Path('DOCUMENTACION_STRIPE.html')
 
 contenido = md_file.read_text(encoding='utf-8')
 
 # Convertir a HTML con extensiones para tablas y código
-html_content = markdown.markdown(
-    contenido,
-    extensions=['tables', 'fenced_code', 'codehilite']
-)
+html_content = markdown.markdown(contenido, extensions=['tables', 'fenced_code', 'codehilite'])
 
 # HTML completo con estilos para impresión
 html_completo = f"""<!DOCTYPE html>
@@ -108,15 +106,15 @@ html_completo = f"""<!DOCTYPE html>
 
 # Guardar HTML
 html_file.write_text(html_completo, encoding='utf-8')
-print(f"HTML guardado en: {html_file.absolute()}")
+print(f'HTML guardado en: {html_file.absolute()}')
 
 # Instrucciones para convertir a PDF
-print("\n" + "="*60)
-print("INSTRUCCIONES PARA CONVERTIR A PDF:")
-print("="*60)
-print("1. Abre el archivo HTML generado:")
-print(f"   {html_file.absolute()}")
-print("\n2. Presiona Ctrl+P (o Cmd+P en Mac)")
+print('\n' + '=' * 60)
+print('INSTRUCCIONES PARA CONVERTIR A PDF:')
+print('=' * 60)
+print('1. Abre el archivo HTML generado:')
+print(f'   {html_file.absolute()}')
+print('\n2. Presiona Ctrl+P (o Cmd+P en Mac)')
 print("\n3. Selecciona 'Guardar como PDF'")
 print("\n4. Ajusta los márgenes a 'Ninguno' o 'Mínimo'")
-print("="*60)
+print('=' * 60)

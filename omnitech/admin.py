@@ -4,9 +4,16 @@ OmniTech Django Admin Configuration
 
 from django.contrib import admin
 from django.utils.html import format_html
+
 from .models import (
-    PhysicalProduct, DigitalLicense,
-    Order, OrderItem, UserProfile, ProductState, LicenseState, OrderState
+    DigitalLicense,
+    LicenseState,
+    Order,
+    OrderItem,
+    OrderState,
+    PhysicalProduct,
+    ProductState,
+    UserProfile,
 )
 
 
@@ -17,20 +24,17 @@ class PhysicalProductAdmin(admin.ModelAdmin):
     search_fields = ['sku', 'nombre']
     readonly_fields = ['fecha_creacion', 'fecha_actualizacion']
     list_per_page = 20
-    
+
     fieldsets = (
-        ('Información', {
-            'fields': ('nombre', 'sku', 'descripcion', 'categoria', 'estado', 'imagen_url')
-        }),
-        ('Precios e Inventario', {
-            'fields': ('precio', 'peso', 'stock_fisico', 'umbral_minimo', 'proveedor')
-        }),
+        ('Información', {'fields': ('nombre', 'sku', 'descripcion', 'categoria', 'estado', 'imagen_url')}),
+        ('Precios e Inventario', {'fields': ('precio', 'peso', 'stock_fisico', 'umbral_minimo', 'proveedor')}),
     )
-    
+
     def precio_formatted(self, obj):
-        return f"${obj.precio:,.0f}"
+        return f'${obj.precio:,.0f}'
+
     precio_formatted.short_description = 'Precio'
-    
+
     def estado_badge(self, obj):
         colors = {
             ProductState.ACTIVO: '#10b981',
@@ -39,8 +43,10 @@ class PhysicalProductAdmin(admin.ModelAdmin):
         }
         return format_html(
             '<span style="background: {}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px;">{}</span>',
-            colors.get(obj.estado, '#6b7280'), obj.get_estado_display()
+            colors.get(obj.estado, '#6b7280'),
+            obj.get_estado_display(),
         )
+
     estado_badge.short_description = 'Estado'
 
 
@@ -51,20 +57,17 @@ class DigitalLicenseAdmin(admin.ModelAdmin):
     search_fields = ['sku', 'nombre']
     readonly_fields = ['fecha_creacion', 'fecha_actualizacion', 'fecha_asignacion']
     list_per_page = 20
-    
+
     fieldsets = (
-        ('Información', {
-            'fields': ('nombre', 'sku', 'descripcion', 'categoria', 'estado', 'imagen_url')
-        }),
-        ('Licencia', {
-            'fields': ('clave_encriptada', 'plataforma', 'duracion_dias', 'estado_licencia')
-        }),
+        ('Información', {'fields': ('nombre', 'sku', 'descripcion', 'categoria', 'estado', 'imagen_url')}),
+        ('Licencia', {'fields': ('clave_encriptada', 'plataforma', 'duracion_dias', 'estado_licencia')}),
     )
-    
+
     def precio_formatted(self, obj):
-        return f"${obj.precio:,.0f}"
+        return f'${obj.precio:,.0f}'
+
     precio_formatted.short_description = 'Precio'
-    
+
     def estado_licencia_badge(self, obj):
         colors = {
             LicenseState.DISPONIBLE: '#10b981',
@@ -73,8 +76,10 @@ class DigitalLicenseAdmin(admin.ModelAdmin):
         }
         return format_html(
             '<span style="background: {}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px;">{}</span>',
-            colors.get(obj.estado_licencia, '#6b7280'), obj.get_estado_licencia_display()
+            colors.get(obj.estado_licencia, '#6b7280'),
+            obj.get_estado_licencia_display(),
         )
+
     estado_licencia_badge.short_description = 'Estado'
 
 
@@ -95,18 +100,19 @@ class OrderItemAdmin(admin.ModelAdmin):
 
     def pedido_link(self, obj):
         from django.utils.html import format_html
-        return format_html(
-            '<a href="/admin/omnitech/order/{}/change/">{}</a>',
-            obj.pedido_id, obj.pedido.numero_pedido
-        )
+
+        return format_html('<a href="/admin/omnitech/order/{}/change/">{}</a>', obj.pedido_id, obj.pedido.numero_pedido)
+
     pedido_link.short_description = 'Pedido'
 
     def producto_nombre(self, obj):
         return obj.producto_fisico or obj.licencia
+
     producto_nombre.short_description = 'Producto'
 
     def precio_formatted(self, obj):
-        return f"${obj.precio_unitario:,.0f}"
+        return f'${obj.precio_unitario:,.0f}'
+
     precio_formatted.short_description = 'Precio Unit.'
 
 
@@ -118,26 +124,19 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ['numero_pedido', 'fecha_creacion', 'fecha_pago']
     inlines = [OrderItemInline]
     list_per_page = 20
-    
+
     fieldsets = (
-        ('Pedido', {
-            'fields': ('numero_pedido', 'estado', 'fecha_pago')
-        }),
-        ('Cliente', {
-            'fields': ('usuario', 'email_invitado')
-        }),
-        ('Totales', {
-            'fields': ('subtotal', 'costo_envio', 'total')
-        }),
-        ('Envío', {
-            'fields': ('region_envio', 'observaciones')
-        }),
+        ('Pedido', {'fields': ('numero_pedido', 'estado', 'fecha_pago')}),
+        ('Cliente', {'fields': ('usuario', 'email_invitado')}),
+        ('Totales', {'fields': ('subtotal', 'costo_envio', 'total')}),
+        ('Envío', {'fields': ('region_envio', 'observaciones')}),
     )
-    
+
     def total_formatted(self, obj):
-        return f"${obj.total:,.0f}"
+        return f'${obj.total:,.0f}'
+
     total_formatted.short_description = 'Total'
-    
+
     def estado_badge(self, obj):
         colors = {
             OrderState.PENDIENTE_PAGO: '#f59e0b',
@@ -147,12 +146,15 @@ class OrderAdmin(admin.ModelAdmin):
         }
         return format_html(
             '<span style="background: {}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px;">{}</span>',
-            colors.get(obj.estado, '#6b7280'), obj.get_estado_display()
+            colors.get(obj.estado, '#6b7280'),
+            obj.get_estado_display(),
         )
+
     estado_badge.short_description = 'Estado'
-    
+
     def usuario_display(self, obj):
         return obj.usuario.username if obj.usuario else obj.email_invitado or '-'
+
     usuario_display.short_description = 'Cliente'
 
 

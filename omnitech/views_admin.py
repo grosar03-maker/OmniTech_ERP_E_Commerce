@@ -3,15 +3,15 @@ Views: Administración Web - OmniTech
 SRP: Solo vistas para administración de productos desde la web
 """
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib import messages
-from django.conf import settings
-from django.db.models import ProtectedError
 from decimal import Decimal
 
-from .models import PhysicalProduct, DigitalLicense, ProductState, LicenseState
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import ProtectedError
+from django.shortcuts import redirect, render
+
 from .factories import ProductFactory
+from .models import DigitalLicense, LicenseState, PhysicalProduct, ProductState
 
 
 @staff_member_required
@@ -71,7 +71,8 @@ def editar_producto(request, producto_id, tipo):
                     contador += 1
                     nuevo_sku = f'{sku}-{contador:03d}'
                 DigitalLicense.objects.create(
-                    nombre=producto.nombre, sku=nuevo_sku,
+                    nombre=producto.nombre,
+                    sku=nuevo_sku,
                     descripcion=producto.descripcion,
                     categoria=producto.categoria,
                     precio=producto.precio,
@@ -122,21 +123,32 @@ def agregar_producto(request, tipo):
             if tipo == 'fisico':
                 peso = request.POST.get('peso', '0')
                 stock_fisico = int(request.POST.get('stock_fisico', 0))
-                producto = PhysicalProduct.objects.create(
-                    nombre=nombre, sku=sku, descripcion=descripcion,
-                    categoria=categoria, precio=precio_dec, imagen_url=imagen_url,
-                    peso=Decimal(str(peso)), stock_fisico=stock_fisico,
+                PhysicalProduct.objects.create(
+                    nombre=nombre,
+                    sku=sku,
+                    descripcion=descripcion,
+                    categoria=categoria,
+                    precio=precio_dec,
+                    imagen_url=imagen_url,
+                    peso=Decimal(str(peso)),
+                    stock_fisico=stock_fisico,
                 )
                 messages.success(request, f'Producto físico {nombre} creado')
             else:
                 clave_encriptada = request.POST.get('clave_encriptada', '').strip()
                 plataforma = request.POST.get('plataforma', '').strip()
                 duracion_dias = int(request.POST.get('duracion_dias', 365))
-                licencia = DigitalLicense.objects.create(
-                    nombre=nombre, sku=sku, descripcion=descripcion,
-                    categoria=categoria, precio=precio_dec, imagen_url=imagen_url,
-                    clave_encriptada=clave_encriptada, plataforma=plataforma,
-                    duracion_dias=duracion_dias, estado_licencia=LicenseState.DISPONIBLE,
+                DigitalLicense.objects.create(
+                    nombre=nombre,
+                    sku=sku,
+                    descripcion=descripcion,
+                    categoria=categoria,
+                    precio=precio_dec,
+                    imagen_url=imagen_url,
+                    clave_encriptada=clave_encriptada,
+                    plataforma=plataforma,
+                    duracion_dias=duracion_dias,
+                    estado_licencia=LicenseState.DISPONIBLE,
                 )
                 messages.success(request, f'Licencia {nombre} creada')
 
@@ -177,7 +189,7 @@ def eliminar_producto(request, producto_id, tipo):
         producto.delete()
         messages.success(request, f'"{nombre}" eliminado permanentemente')
     except ProtectedError:
-        messages.error(request, f'No se puede eliminar: tiene pedidos asociados')
+        messages.error(request, 'No se puede eliminar: tiene pedidos asociados')
     except Exception as e:
         messages.error(request, f'Error al eliminar: {str(e)}')
     return redirect('admin_dashboard')

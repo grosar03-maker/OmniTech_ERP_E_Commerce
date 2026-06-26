@@ -3,22 +3,21 @@ Services Layer - OmniTech
 Lógica de negocio centralizada aplicando SOLID y bajo acoplamiento
 """
 
+import uuid
+from decimal import Decimal
+
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.conf import settings
 from django.db import transaction
-from decimal import Decimal
-import uuid
 
-from .models import (
-    Order, OrderItem, OrderState, LicenseState
-)
 from .factories import ProductFactory
-
+from .models import Order, OrderItem, OrderState
 
 # =============================================================================
 # ORDER SERVICE - Aplica SRP y reduce acoplamiento
 # =============================================================================
+
 
 class OrderService:
     """
@@ -26,7 +25,7 @@ class OrderService:
     SRP: Solo maneja la lógica de negocio de pedidos
     DIP: Utiliza dependencias inyectadas o propiedades de los modelos
     """
-    
+
     @staticmethod
     def crear_pedido(usuario, email_invitado, region, observaciones, costo_envio):
         """Crea un pedido pendiente."""
@@ -40,7 +39,7 @@ class OrderService:
             observaciones=observaciones,
             costo_envio=costo_envio,
         )
-    
+
     @staticmethod
     def procesar_pago(order_id, carrito_temp):
         """
@@ -50,23 +49,23 @@ class OrderService:
         try:
             with transaction.atomic():
                 order = Order.objects.select_for_update().get(numero_pedido=order_id)
-                
+
                 if order.estado != OrderState.PENDIENTE_PAGO:
-                    return None, False, "Pedido ya procesado o cancelado"
+                    return None, False, 'Pedido ya procesado o cancelado'
 
                 subtotal = Decimal('0.00')
-                
+
                 for item_data in carrito_temp:
                     producto_id = item_data['producto_id']
                     tipo = item_data['tipo']
                     cantidad = int(item_data['cantidad'])
                     precio = Decimal(str(item_data['precio']))
                     subtotal += precio * cantidad
-                    
+
                     # Factory Method + OCP: polimorfismo vía ProductFactory
                     producto = ProductFactory.obtener_producto_con_lock(tipo, producto_id)
                     producto.procesar_venta(cantidad)
-                    
+
                     OrderItem.objects.create(
                         pedido=order,
                         producto_fisico=producto if ProductFactory.es_tipo_fisico(tipo) else None,
@@ -80,6 +79,7 @@ class OrderService:
                 order.total = subtotal + (order.costo_envio or Decimal('0'))
                 order.estado = OrderState.PAGADO_PROCESANDO
                 from django.utils import timezone
+
                 order.fecha_pago = timezone.now()
                 order.save()
 
@@ -94,15 +94,12 @@ class OrderService:
         Reemplaza la lógica directa que estaba en views.py.
         """
         import uuid
+
         from django.conf import settings
 
         numero_pedido = f'OT-{uuid.uuid4().hex[:8].upper()}'
 
-        peso_total = sum(
-            item.get('peso', 0) * item['cantidad']
-            for item in carrito
-            if item.get('tipo') == 'fisico'
-        )
+        peso_total = sum(item.get('peso', 0) * item['cantidad'] for item in carrito if item.get('tipo') == 'fisico')
 
         costo_envio = Decimal(str(peso_total * 500)) if peso_total > 0 else Decimal('0')
 
@@ -130,20 +127,16 @@ class OrderService:
     @staticmethod
     def calcular_costo_envio(carrito, region):
         """Calcula el costo de envío aplicando RN-04."""
-        peso_total = sum(
-            item.get('peso', 0) * item['cantidad'] 
-            for item in carrito
-            if item.get('tipo') == 'fisico'
-        )
-        
+        peso_total = sum(item.get('peso', 0) * item['cantidad'] for item in carrito if item.get('tipo') == 'fisico')
+
         costo = Decimal(str(peso_total * 500)) if peso_total > 0 else Decimal('0')
-        
+
         # RN-04: Subsidio La Araucanía
         if region == 'La Araucania':
             subtotal = sum(Decimal(str(item['precio'])) * item['cantidad'] for item in carrito)
             if subtotal > Decimal(str(settings.SUBSIDIO_MONTO)):
                 costo = Decimal('0')
-        
+
         return costo
 
 
@@ -151,60 +144,64 @@ class OrderService:
 # CART SERVICE - Gestión del carrito
 # =============================================================================
 
+
 class CartService:
     """Servicio para gestión del carrito (SRP)."""
-    
+
     @staticmethod
     def get_carrito(request):
         """Obtiene el carrito de la sesión."""
         return request.session.get(settings.CART_SESSION_KEY, [])
-    
+
     @staticmethod
     def save_carrito(request, carrito):
         """Guarda el carrito en la sesión."""
         request.session[settings.CART_SESSION_KEY] = carrito
         request.session.modified = True
-    
+
     @staticmethod
     def calcular_totales(carrito):
         """Calcula subtotales del carrito."""
         subtotal = Decimal('0.00')
         items_data = []
-        
+
         for item in carrito:
             cantidad = int(item.get('cantidad', 1))
             precio = Decimal(str(item.get('precio', 0)))
             tipo = item.get('tipo', 'fisico')
             producto_id = item.get('producto_id')
-            
+
             item_subtotal = precio * cantidad
             subtotal += item_subtotal
-            
+
             try:
                 producto = ProductFactory.obtener_producto(tipo, producto_id)
                 nombre = producto.nombre
                 imagen = producto.imagen_url or (
-                    '/static/img/product-placeholder.png' if ProductFactory.es_tipo_fisico(tipo)
+                    '/static/img/product-placeholder.png'
+                    if ProductFactory.es_tipo_fisico(tipo)
                     else '/static/img/license-placeholder.png'
                 )
                 peso = float(producto.peso) if ProductFactory.es_tipo_fisico(tipo) else 0
             except ObjectDoesNotExist:
                 continue
-            
-            items_data.append({
-                'id': producto_id,
-                'tipo': tipo,
-                'nombre': nombre,
-                'precio': float(precio),
-                'cantidad': cantidad,
-                'subtotal': float(item_subtotal),
-                'imagen': imagen,
-                'peso': peso,
-            })
-        
+
+            items_data.append(
+                {
+                    'id': producto_id,
+                    'tipo': tipo,
+                    'nombre': nombre,
+                    'precio': float(precio),
+                    'cantidad': cantidad,
+                    'subtotal': float(item_subtotal),
+                    'imagen': imagen,
+                    'peso': peso,
+                }
+            )
+
         peso_total = sum(item['peso'] * item['cantidad'] for item in items_data)
         costo_envio = Decimal(str(peso_total * 500)) if peso_total > 0 else Decimal('0.00')
-        
+
         return {
             'items': items_data,
             'subtotal': float(subtotal),
@@ -218,21 +215,23 @@ class CartService:
 # EMAIL SERVICE - Envío de correos
 # =============================================================================
 
+
 class EmailService:
     """Servicio para envío de correos (SRP)."""
-    
+
     @staticmethod
     def enviar_boleta(pedido):
         """Envía la boleta por correo."""
         from .services_template import renderizar_boleta
+
         email_destino = pedido.email_invitado or (pedido.usuario.email if pedido.usuario else None)
-        
+
         if not email_destino:
             return False, 'No se encontró email'
-        
+
         try:
             html_boleta = renderizar_boleta(pedido)
-            
+
             send_mail(
                 subject=f'OmniTech - Comprobante de compra {pedido.numero_pedido}',
                 message=f'Tu pedido {pedido.numero_pedido} ha sido confirmado. Total: ${float(pedido.total):,.0f}',
@@ -244,7 +243,7 @@ class EmailService:
             return True, f'Boleta enviada a {email_destino}'
         except Exception as e:
             return False, str(e)
-    
+
     @staticmethod
     def notificar_stock_bajo(producto, cantidad):
         """Notifica cuando el stock está bajo."""
@@ -265,14 +264,18 @@ class EmailService:
 # FUNCIONES LEGACY - Mantenidas por compatibilidad
 # =============================================================================
 
+
 def generar_html_boleta(pedido):
     """Función legacy - ahora delegamos al template."""
     from .services_template import renderizar_boleta
+
     return renderizar_boleta(pedido)
+
 
 def enviar_boleta_pedido(pedido):
     """Envía la boleta por correo (legacy)."""
     return EmailService.enviar_boleta(pedido)
+
 
 def enviar_notificacion_stock_bajo(producto, cantidad):
     """Notifica cuando el stock está bajo (legacy)."""
@@ -284,19 +287,19 @@ def enviar_claves_licencia(pedido):
     Envía las claves de licencia por correo electrónico.
     Solo envía licencias digitales compradas.
     """
-    from django.core.mail import send_mail
     from django.conf import settings
-    
+    from django.core.mail import send_mail
+
     licencias = pedido.items.filter(licencia__isnull=False)
-    
+
     if not licencias.exists():
         return False, 'No hay licencias digitales en este pedido'
-    
+
     email_destino = pedido.email_invitado or (pedido.usuario.email if pedido.usuario else None)
-    
+
     if not email_destino:
         return False, 'No se encontró email del cliente'
-    
+
     try:
         claves_info = []
         for item in licencias:
@@ -305,16 +308,18 @@ def enviar_claves_licencia(pedido):
                 clave = licencia.desencriptar_clave()
             except Exception:
                 clave = licencia.clave_encriptada
-            
-            claves_info.append({
-                'nombre': licencia.nombre,
-                'plataforma': licencia.plataforma,
-                'clave': clave,
-                'duracion': licencia.duracion_dias,
-            })
-        
+
+            claves_info.append(
+                {
+                    'nombre': licencia.nombre,
+                    'plataforma': licencia.plataforma,
+                    'clave': clave,
+                    'duracion': licencia.duracion_dias,
+                }
+            )
+
         html_content = generar_html_claves(claves_info, pedido.numero_pedido)
-        
+
         send_mail(
             subject=f'OmniTech - Tus claves de licencia #{pedido.numero_pedido}',
             message=f'Tu pedido {pedido.numero_pedido} ha sido confirmado. Aquí están tus claves de licencia.',
@@ -327,11 +332,12 @@ def enviar_claves_licencia(pedido):
     except Exception as e:
         return False, str(e)
 
+
 def generar_html_claves(claves, numero_pedido):
     """Genera HTML con las claves de licencia — diseño mejorado, compatible con Gmail/Outlook."""
     cards_html = ''
     for item in claves:
-        cards_html += f'''
+        cards_html += f"""
         <tr>
             <td style="padding: 0 0 16px 0;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="background:#13131f; border:1px solid #2a2a3e; border-radius:12px; overflow:hidden;">
@@ -369,9 +375,9 @@ def generar_html_claves(claves, numero_pedido):
                 </table>
             </td>
         </tr>
-        '''
+        """
 
-    html = f'''
+    html = f"""
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -462,5 +468,5 @@ def generar_html_claves(claves, numero_pedido):
 </table>
 </body>
 </html>
-    '''
+    """
     return html

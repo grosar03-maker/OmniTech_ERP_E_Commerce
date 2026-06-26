@@ -1,4 +1,5 @@
 import sys
+
 import pytest
 from django.urls import reverse
 
@@ -16,6 +17,7 @@ skip_template_tests = pytest.mark.skipif(
 class TestModels:
     def test_user_profile_creation(self, user):
         from omnitech.models import UserProfile
+
         UserProfile.objects.create(user=user)
         assert hasattr(user, 'perfil')
 

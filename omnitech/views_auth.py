@@ -3,16 +3,16 @@ Views: Autenticación - OmniTech
 SRP: Solo vistas relacionadas con login, registro y recuperación de contraseña
 """
 
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib import messages
-from django.conf import settings
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from .models import UserProfile
 
@@ -117,9 +117,7 @@ def password_reset_request(request):
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
 
-            reset_url = request.build_absolute_uri(
-                f'/password-reset/confirm/{uid}/{token}/'
-            )
+            reset_url = request.build_absolute_uri(f'/password-reset/confirm/{uid}/{token}/')
 
             html_message = f'''
 <!DOCTYPE html>
@@ -163,7 +161,9 @@ def password_reset_request(request):
                 fail_silently=False,
             )
 
-        messages.success(request, 'Te hemos enviado un correo con instrucciones si el usuario existe en nuestro sistema.')
+        messages.success(
+            request, 'Te hemos enviado un correo con instrucciones si el usuario existe en nuestro sistema.'
+        )
         return redirect('login')
 
     return render(request, 'password_reset.html')
@@ -181,10 +181,10 @@ def password_reset_confirm(request, uidb64, token):
             password = request.POST.get('password', '')
             password2 = request.POST.get('password2', '')
 
-            print(f"[DEBUG] Form data: {dict(request.POST)}")
-            print(f"[DEBUG] password field: {repr(password)}")
-            print(f"[DEBUG] user: {user.username}, pk: {user.pk}")
-            print(f"[DEBUG] old hash: {user.password[:40]}...")
+            print(f'[DEBUG] Form data: {dict(request.POST)}')
+            print(f'[DEBUG] password field: {repr(password)}')
+            print(f'[DEBUG] user: {user.username}, pk: {user.pk}')
+            print(f'[DEBUG] old hash: {user.password[:40]}...')
 
             if len(password) < 8:
                 messages.error(request, 'La contrasena debe tener al menos 8 caracteres.')
@@ -195,14 +195,15 @@ def password_reset_confirm(request, uidb64, token):
                 return render(request, 'password_reset_confirm.html', {'uidb64': uidb64, 'token': token})
 
             from django.contrib.auth.hashers import make_password
+
             nuevo_hash = make_password(password)
 
             User.objects.filter(pk=user.pk).update(password=nuevo_hash)
 
             user = User.objects.get(pk=user.pk)
 
-            print(f"[DEBUG] new hash: {user.password[:40]}...")
-            print(f"[DEBUG] verify check_password: {user.check_password(password)}")
+            print(f'[DEBUG] new hash: {user.password[:40]}...')
+            print(f'[DEBUG] verify check_password: {user.check_password(password)}')
 
             messages.success(request, 'Contrasena restablecida. Intenta iniciar sesion.')
             return redirect('login')
@@ -228,13 +229,15 @@ def debug_password(request):
             user.password = nuevo_hash
             user.save()
 
-            return JsonResponse({
-                'success': True,
-                'username': username,
-                'old_hash': old_hash[:50],
-                'new_hash': nuevo_hash[:50],
-                'verify_after_save': user.check_password(new_password),
-            })
+            return JsonResponse(
+                {
+                    'success': True,
+                    'username': username,
+                    'old_hash': old_hash[:50],
+                    'new_hash': nuevo_hash[:50],
+                    'verify_after_save': user.check_password(new_password),
+                }
+            )
         except User.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Usuario no existe'})
 
@@ -245,12 +248,9 @@ def reset_password_direct(request, username, password):
     try:
         user = User.objects.get(username=username)
         from django.contrib.auth.hashers import make_password
+
         user.password = make_password(password)
         user.save()
-        return JsonResponse({
-            'success': True,
-            'user': username,
-            'verify': user.check_password(password)
-        })
+        return JsonResponse({'success': True, 'user': username, 'verify': user.check_password(password)})
     except User.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'User not found'})
