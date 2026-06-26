@@ -57,10 +57,10 @@ def renderizar_boleta(pedido, logo_url=''):
         return template.render(context)
     except Exception:
         # Fallback: generar HTML directamente si el template no existe
-        return generar_html_fallback(pedido, items_list, cliente_nombre, email_destino, fecha_formato)
+        return generar_html_fallback(pedido, items_list, cliente_nombre, email_destino, fecha_formato, logo_url)
 
 
-def generar_html_fallback(pedido, items_list, cliente_nombre, email_destino, fecha):
+def generar_html_fallback(pedido, items_list, cliente_nombre, email_destino, fecha, logo_url=''):
     """Genera HTML de fallback si el template no existe."""
 
     items_html = ''
