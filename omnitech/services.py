@@ -221,7 +221,7 @@ class EmailService:
 
     @staticmethod
     def _logo_url():
-        return f"{settings.SITE_URL}/static/img/logo_web.png"
+        return f'{settings.SITE_URL}/static/img/logo_web.png'
 
     @staticmethod
     def enviar_boleta(pedido):
@@ -304,7 +304,7 @@ def enviar_claves_licencia(pedido):
     if not email_destino:
         return False, 'No se encontró email del cliente'
 
-    logo_url = f"{settings.SITE_URL}/static/img/logo_web.png"
+    logo_url = f'{settings.SITE_URL}/static/img/logo_web.png'
 
     try:
         claves_info = []
@@ -324,7 +324,7 @@ def enviar_claves_licencia(pedido):
                 }
             )
 
-        html_content = generar_html_claves(claves_info, pedido.numero_pedido)
+        html_content = generar_html_claves(claves_info, pedido.numero_pedido, logo_url)
 
         send_mail(
             subject=f'OmniTech - Tus claves de licencia #{pedido.numero_pedido}',
@@ -339,7 +339,7 @@ def enviar_claves_licencia(pedido):
         return False, str(e)
 
 
-def generar_html_claves(claves, numero_pedido):
+def generar_html_claves(claves, numero_pedido, logo_url=''):
     """Genera HTML con las claves de licencia — diseño mejorado, compatible con Gmail/Outlook."""
     cards_html = ''
     for item in claves:
