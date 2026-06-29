@@ -15,6 +15,11 @@ db.sqlite3
 db.sqlite3-journal
 /media
 /staticfiles
+.coverage
+coverage.xml
+.scannerwork/
+.sonar/
+.tools/
 
 # Secrets
 .env
