@@ -2,31 +2,6 @@ from decimal import Decimal
 
 import pytest
 
-from omnitech.models import Order, OrderItem, PhysicalProduct, UserProfile
-
-
-@pytest.fixture
-def physical_product(db):
-    return PhysicalProduct.objects.create(
-        nombre='Notebook Pro',
-        precio=Decimal('120000.00'),
-        sku='NB-001',
-        categoria='Hardware',
-        peso=Decimal('2.50'),
-        stock_fisico=10,
-    )
-
-
-@pytest.fixture
-def order(user):
-    return Order.objects.create(
-        numero_pedido='OT-STRIPE-01',
-        usuario=user,
-        subtotal=Decimal('120000.00'),
-        costo_envio=Decimal('2500.00'),
-        total=Decimal('122500.00'),
-    )
-
 
 @pytest.mark.django_db
 class TestCrearCheckoutSession:

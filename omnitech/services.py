@@ -93,20 +93,8 @@ class OrderService:
         DIP: Crea un pedido PENDIENTE_PAGO y calcula costo de envío.
         Reemplaza la lógica directa que estaba en views.py.
         """
-        import uuid
-
-        from django.conf import settings
-
         numero_pedido = f'OT-{uuid.uuid4().hex[:8].upper()}'
-
-        peso_total = sum(item.get('peso', 0) * item['cantidad'] for item in carrito if item.get('tipo') == 'fisico')
-
-        costo_envio = Decimal(str(peso_total * 500)) if peso_total > 0 else Decimal('0')
-
-        if region == 'La Araucania':
-            subtotal = sum(Decimal(str(item['precio'])) * item['cantidad'] for item in carrito)
-            if subtotal > Decimal(str(settings.SUBSIDIO_MONTO)):
-                costo_envio = Decimal('0')
+        costo_envio = OrderService.calcular_costo_envio(carrito, region)
 
         order = Order.objects.create(
             numero_pedido=numero_pedido,

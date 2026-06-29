@@ -3,6 +3,7 @@ Views: Catálogo y Carrito - OmniTech
 SRP: Solo vistas relacionadas con navegación de productos y compras
 """
 
+import functools
 import json
 import logging
 
@@ -19,6 +20,19 @@ from .services import CartService, OrderService, enviar_boleta_pedido, enviar_cl
 from .stripe_service import crear_checkout_session
 
 logger = logging.getLogger(__name__)
+
+
+def _json_post(view_func):
+    """Decorator: requiere POST, parsea JSON body y captura excepciones."""
+    @require_POST
+    @functools.wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            return view_func(request, data, *args, **kwargs)
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return functools.update_wrapper(wrapper, view_func)
 
 
 def home(request):
@@ -100,106 +114,94 @@ def detalle_producto(request, tipo, producto_id):
     return render(request, 'detalle_producto.html', context)
 
 
-@require_POST
-def agregar_al_carrito(request):
-    try:
-        data = json.loads(request.body)
-        producto_id = data.get('producto_id')
-        tipo = data.get('tipo', 'fisico')
-        cantidad = int(data.get('cantidad', 1))
+def _json_carrito_response(request, carrito, **extra):
+    CartService.save_carrito(request, carrito)
+    totales = CartService.calcular_totales(carrito)
+    return JsonResponse({'success': True, **totales, **extra})
 
-        producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
-        if ProductFactory.es_tipo_fisico(tipo):
-            if producto.stock_disponible < cantidad:
-                return JsonResponse({'success': False, 'error': 'Stock insuficiente'})
-        else:
-            if producto.estado_licencia != LicenseState.DISPONIBLE:
-                return JsonResponse({'success': False, 'error': 'Licencia no disponible'})
-        precio = producto.precio
 
-        carrito = CartService.get_carrito(request)
+@_json_post
+def agregar_al_carrito(request, data):
+    producto_id = data.get('producto_id')
+    tipo = data.get('tipo', 'fisico')
+    cantidad = int(data.get('cantidad', 1))
 
-        item_existente = None
-        for i, item in enumerate(carrito):
-            if item.get('producto_id') == producto_id and item.get('tipo') == tipo:
-                item_existente = i
-                break
+    producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
+    if ProductFactory.es_tipo_fisico(tipo):
+        if producto.stock_disponible < cantidad:
+            return JsonResponse({'success': False, 'error': 'Stock insuficiente'})
+    else:
+        if producto.estado_licencia != LicenseState.DISPONIBLE:
+            return JsonResponse({'success': False, 'error': 'Licencia no disponible'})
+    precio = producto.precio
 
-        if item_existente is not None:
-            carrito[item_existente]['cantidad'] += cantidad
-        else:
-            carrito.append(
-                {
-                    'producto_id': producto_id,
-                    'tipo': tipo,
-                    'nombre': producto.nombre,
-                    'precio': float(precio),
-                    'cantidad': cantidad,
-                }
-            )
+    carrito = CartService.get_carrito(request)
 
-        CartService.save_carrito(request, carrito)
-        totales = CartService.calcular_totales(carrito)
+    item_existente = None
+    for i, item in enumerate(carrito):
+        if item.get('producto_id') == producto_id and item.get('tipo') == tipo:
+            item_existente = i
+            break
 
-        return JsonResponse(
+    if item_existente is not None:
+        carrito[item_existente]['cantidad'] += cantidad
+    else:
+        carrito.append(
             {
-                'success': True,
-                'carrito_count': totales['cantidad_items'],
-                'message': f'{producto.nombre} agregado al carrito',
+                'producto_id': producto_id,
+                'tipo': tipo,
+                'nombre': producto.nombre,
+                'precio': float(precio),
+                'cantidad': cantidad,
             }
         )
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+
+    CartService.save_carrito(request, carrito)
+    totales = CartService.calcular_totales(carrito)
+
+    return JsonResponse(
+        {
+            'success': True,
+            'carrito_count': totales['cantidad_items'],
+            'message': f'{producto.nombre} agregado al carrito',
+        }
+    )
 
 
-@require_POST
-def actualizar_carrito(request):
-    try:
-        data = json.loads(request.body)
-        producto_id = data.get('producto_id')
-        tipo = data.get('tipo')
-        cantidad = int(data.get('cantidad', 1))
+@_json_post
+def actualizar_carrito(request, data):
+    producto_id = data.get('producto_id')
+    tipo = data.get('tipo')
+    cantidad = int(data.get('cantidad', 1))
 
-        carrito = CartService.get_carrito(request)
+    carrito = CartService.get_carrito(request)
 
-        for item in carrito:
-            if item.get('producto_id') == producto_id and item.get('tipo') == tipo:
-                if cantidad <= 0:
-                    carrito.remove(item)
-                else:
-                    if cantidad > 0 and ProductFactory.es_tipo_fisico(tipo):
-                        producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
-                        if producto.stock_disponible < cantidad:
-                            return JsonResponse({'success': False, 'error': 'Stock insuficiente'})
-                    item['cantidad'] = cantidad
-                break
+    for item in carrito:
+        if item.get('producto_id') == producto_id and item.get('tipo') == tipo:
+            if cantidad <= 0:
+                carrito.remove(item)
+            else:
+                if cantidad > 0 and ProductFactory.es_tipo_fisico(tipo):
+                    producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
+                    if producto.stock_disponible < cantidad:
+                        return JsonResponse({'success': False, 'error': 'Stock insuficiente'})
+                item['cantidad'] = cantidad
+            break
 
-        CartService.save_carrito(request, carrito)
-        totales = CartService.calcular_totales(carrito)
-
-        return JsonResponse({'success': True, **totales})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    return _json_carrito_response(request, carrito)
 
 
-@require_POST
-def eliminar_del_carrito(request):
-    try:
-        data = json.loads(request.body)
-        producto_id = data.get('producto_id')
-        tipo = data.get('tipo')
+@_json_post
+def eliminar_del_carrito(request, data):
+    producto_id = data.get('producto_id')
+    tipo = data.get('tipo')
 
-        carrito = CartService.get_carrito(request)
-        carrito = [
-            item for item in carrito if not (item.get('producto_id') == producto_id and item.get('tipo') == tipo)
-        ]
+    carrito = CartService.get_carrito(request)
+    carrito = [
+        item for item in carrito if not (item.get('producto_id') == producto_id and item.get('tipo') == tipo)
+    ]
 
-        CartService.save_carrito(request, carrito)
-        totales = CartService.calcular_totales(carrito)
-
-        return JsonResponse({'success': True, **totales})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+    return _json_carrito_response(request, carrito)
 
 
 @require_POST

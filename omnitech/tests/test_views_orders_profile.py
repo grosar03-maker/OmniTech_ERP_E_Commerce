@@ -3,47 +3,25 @@ from decimal import Decimal
 import pytest
 from django.urls import reverse
 
-from omnitech.models import DigitalLicense, LicenseState, Order, OrderState, PhysicalProduct
-
-
-@pytest.fixture
-def physical_product(db):
-    return PhysicalProduct.objects.create(
-        nombre='Notebook Pro',
-        precio=Decimal('120000.00'),
-        sku='NB-001',
-        categoria='Hardware',
-        peso=Decimal('2.50'),
-        stock_fisico=10,
-    )
-
-
-@pytest.fixture
-def order(user):
-    return Order.objects.create(
-        numero_pedido='OT-ORDER-01',
-        usuario=user,
-        subtotal=Decimal('120000.00'),
-        total=Decimal('120000.00'),
-    )
+from omnitech.models import DigitalLicense, LicenseState, Order, OrderState
 
 
 @pytest.mark.django_db
 class TestDetallePedido:
     def test_detalle_pedido_authenticated_owner(self, client, user, order):
         client.login(username='testuser', password='testpass123')
-        response = client.get(reverse('detalle_pedido', args=['OT-ORDER-01']))
+        response = client.get(reverse('detalle_pedido', args=['OT-TEST-01']))
         assert response.status_code == 200
 
     def test_detalle_pedido_authenticated_not_owner(self, client, order):
         from django.contrib.auth.models import User
-        other_user = User.objects.create_user(username='other', password='testpass123')
+        User.objects.create_user(username='other', password='testpass123')
         client.login(username='other', password='testpass123')
-        response = client.get(reverse('detalle_pedido', args=['OT-ORDER-01']))
+        response = client.get(reverse('detalle_pedido', args=['OT-TEST-01']))
         assert response.status_code == 302
 
     def test_detalle_pedido_anonymous_for_user_order(self, client, order):
-        response = client.get(reverse('detalle_pedido', args=['OT-ORDER-01']))
+        response = client.get(reverse('detalle_pedido', args=['OT-TEST-01']))
         assert response.status_code == 302
 
     def test_detalle_pedido_anonymous_guest_order(self, client):
@@ -58,6 +36,13 @@ class TestDetallePedido:
     def test_detalle_pedido_not_found(self, client):
         response = client.get(reverse('detalle_pedido', args=['OT-NONEXISTENT']))
         assert response.status_code == 404
+
+    def test_detalle_pedido_anonymous_order_with_user(self, client, order):
+        order.usuario = None
+        order.email_invitado = 'guest@test.com'
+        order.save()
+        response = client.get(reverse('detalle_pedido', args=['OT-TEST-01']))
+        assert response.status_code == 200
 
 
 @pytest.mark.django_db

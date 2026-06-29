@@ -1,6 +1,10 @@
+from decimal import Decimal
+
 import pytest
 from django.contrib.auth.models import User
 from django.test import Client
+
+from omnitech.models import DigitalLicense, Order, PhysicalProduct
 
 
 @pytest.fixture
@@ -35,40 +39,43 @@ def authenticated_client(client, user):
 
 @pytest.fixture
 def physical_product(db):
-    from omnitech.models import PhysicalProduct
-
     return PhysicalProduct.objects.create(
-        nombre='Procesador Test',
-        precio=150000,
-        sku='CPU-001',
-        categoria='Componentes',
-        peso=0.5,
-        stock_fisico=50,
-        stock_reservado=5,
-        umbral_minimo=10,
+        nombre='Notebook Pro',
+        precio=Decimal('120000.00'),
+        sku='NB-001',
+        categoria='Hardware',
+        peso=Decimal('2.50'),
+        stock_fisico=10,
     )
 
 
 @pytest.fixture
 def digital_license(db):
-    from omnitech.models import DigitalLicense, LicenseState
-    from omnitech.models import encriptar_clave
-
     return DigitalLicense.objects.create(
-        nombre='Windows Pro',
-        precio=80000,
-        sku='WIN-PRO-001',
-        categoria='Sistemas Operativos',
-        clave_encriptada=encriptar_clave('AAAAA-BBBBB-CCCCC-DDDDD'),
+        nombre='Antivirus Pro',
+        descripcion='Licencia anual',
+        precio=Decimal('20000.00'),
+        sku='AV-001',
+        categoria='Software',
+        clave_encriptada='gAAAAABnZmFkZQ==',
         plataforma='Windows',
         duracion_dias=365,
-        estado_licencia=LicenseState.DISPONIBLE,
+    )
+
+
+@pytest.fixture
+def order(user):
+    return Order.objects.create(
+        numero_pedido='OT-TEST-01',
+        usuario=user,
+        subtotal=Decimal('120000.00'),
+        total=Decimal('120000.00'),
     )
 
 
 @pytest.fixture
 def digital_license_reservada(db, digital_license, user):
-    from omnitech.models import Order, OrderState
+    from omnitech.models import Order
 
     order = Order.objects.create(numero_pedido='RES-001', usuario=user, subtotal=80000, total=80000)
     digital_license.reservar(order)
@@ -79,16 +86,3 @@ def digital_license_reservada(db, digital_license, user):
 def digital_license_consumida(db, digital_license_reservada):
     digital_license_reservada.entregar()
     return digital_license_reservada
-
-
-@pytest.fixture
-def order(db, user):
-    from omnitech.models import Order
-
-    return Order.objects.create(
-        numero_pedido='ORD-TEST-001',
-        usuario=user,
-        subtotal=150000,
-        total=150000,
-        region_envio='Santiago',
-    )

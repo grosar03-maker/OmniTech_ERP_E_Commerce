@@ -14,15 +14,17 @@ from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
 
-def encriptar_clave(clave):
-    """Helper para encriptar claves de licencia."""
+def _get_fernet():
     import base64
     import hashlib
-
     from cryptography.fernet import Fernet
-
     key = base64.urlsafe_b64encode(hashlib.sha256(settings.SECRET_KEY.encode()).digest())
-    f = Fernet(key)
+    return Fernet(key)
+
+
+def encriptar_clave(clave):
+    """Helper para encriptar claves de licencia."""
+    f = _get_fernet()
     return f.encrypt(clave.encode()).decode()
 
 
@@ -107,7 +109,7 @@ class Order(models.Model):
 
         tiene_hardware = self.items.filter(producto_fisico__isnull=False).exists()
 
-        if tiene_hardware and self.region_envio == 'La Araucanía' and self.subtotal > 100000:
+        if tiene_hardware and self.region_envio == 'La Araucanía' and self.subtotal > settings.SUBSIDIO_MONTO:
             self.costo_envio = Decimal('0.00')
         elif tiene_hardware:
             peso_total = sum(
@@ -347,13 +349,7 @@ class DigitalLicense(Product):
         Desencripta la clave para visualización.
         En producción usar AWS KMS o similar.
         """
-        import base64
-        import hashlib
-
-        from cryptography.fernet import Fernet
-
-        key = base64.urlsafe_b64encode(hashlib.sha256(settings.SECRET_KEY.encode()).digest())
-        f = Fernet(key)
+        f = _get_fernet()
         return f.decrypt(self.clave_encriptada.encode()).decode()
 
     def procesar_venta(self, cantidad):

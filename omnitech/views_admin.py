@@ -29,47 +29,71 @@ def dashboard(request):
     return render(request, 'admin_dashboard.html', context)
 
 
+def _extraer_datos_producto(request):
+    nombre = request.POST.get('nombre', '').strip()
+    sku = request.POST.get('sku', '').strip().upper()
+    return {
+        'nombre': nombre,
+        'sku': sku,
+        'descripcion': request.POST.get('descripcion', '').strip(),
+        'categoria': request.POST.get('categoria', '').strip(),
+        'precio': Decimal(str(request.POST.get('precio', '0'))),
+        'imagen_url': request.POST.get('imagen_url', '').strip(),
+    }
+
+
+def _validar_nombre_sku(nombre, sku):
+    return bool(nombre and sku)
+
+
+def _aplicar_campos_tipo(producto, tipo, datos):
+    if tipo == 'fisico':
+        producto.peso = Decimal(str(datos.get('peso', '0')))
+        producto.stock_fisico = int(datos.get('stock_fisico', 0))
+    else:
+        producto.plataforma = datos.get('plataforma', '').strip()
+        producto.duracion_dias = int(datos.get('duracion_dias', 365))
+        clave = datos.get('clave_encriptada', '').strip()
+        if clave:
+            producto.clave_encriptada = clave
+
+
+def _extraer_y_validar(request, redirect_url, *url_args):
+    datos = _extraer_datos_producto(request)
+    if not _validar_nombre_sku(datos['nombre'], datos['sku']):
+        messages.error(request, 'Nombre y SKU son requeridos')
+        return None, redirect(redirect_url, *url_args)
+    return datos, None
+
+
 @staff_member_required(login_url='/login/')
 def editar_producto(request, producto_id, tipo):
     producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
 
     if request.method == 'POST':
         try:
-            producto.nombre = request.POST.get('nombre', '').strip()
-            sku = request.POST.get('sku', '').strip().upper()
-            producto.descripcion = request.POST.get('descripcion', '').strip()
-            producto.categoria = request.POST.get('categoria', '').strip()
-            producto.precio = Decimal(str(request.POST.get('precio', '0')))
-            producto.imagen_url = request.POST.get('imagen_url', '').strip()
+            datos, err = _extraer_y_validar(request, 'editar_producto', producto_id, tipo)
+            if err:
+                return err
 
-            if not producto.nombre or not sku:
-                messages.error(request, 'Nombre y SKU son requeridos')
-                return redirect('editar_producto', producto_id=producto_id, tipo=tipo)
+            for attr in ('nombre', 'sku', 'descripcion', 'categoria', 'precio', 'imagen_url'):
+                setattr(producto, attr, datos[attr])
 
-            producto.sku = sku
-
-            if tipo == 'fisico':
-                producto.peso = Decimal(str(request.POST.get('peso', '0')))
-                producto.stock_fisico = int(request.POST.get('stock_fisico', 0))
-            else:
-                producto.plataforma = request.POST.get('plataforma', '').strip()
-                producto.duracion_dias = int(request.POST.get('duracion_dias', 365))
-                clave = request.POST.get('clave_encriptada', '').strip()
-                if clave:
-                    producto.clave_encriptada = clave
+            _aplicar_campos_tipo(producto, tipo, request.POST)
 
             producto.save()
 
             claves_extra = request.POST.getlist('claves_adicionales')
+            sku_base = datos['sku']
             contador = 1
             for c in claves_extra:
                 c = c.strip()
                 if not c:
                     continue
-                nuevo_sku = f'{sku}-{contador:03d}'
+                nuevo_sku = f'{sku_base}-{contador:03d}'
                 while DigitalLicense.objects.filter(sku=nuevo_sku).exists():
                     contador += 1
-                    nuevo_sku = f'{sku}-{contador:03d}'
+                    nuevo_sku = f'{sku_base}-{contador:03d}'
                 DigitalLicense.objects.create(
                     nombre=producto.nombre,
                     sku=nuevo_sku,
@@ -107,50 +131,30 @@ def editar_producto(request, producto_id, tipo):
 def agregar_producto(request, tipo):
     if request.method == 'POST':
         try:
-            nombre = request.POST.get('nombre', '').strip()
-            sku = request.POST.get('sku', '').strip().upper()
-            descripcion = request.POST.get('descripcion', '').strip()
-            categoria = request.POST.get('categoria', '').strip()
-            precio = request.POST.get('precio', '0')
-            imagen_url = request.POST.get('imagen_url', '').strip()
-
-            if not nombre or not sku:
-                messages.error(request, 'Nombre y SKU son requeridos')
-                return redirect('agregar_producto', tipo=tipo)
-
-            precio_dec = Decimal(str(precio))
+            datos, err = _extraer_y_validar(request, 'agregar_producto', tipo)
+            if err:
+                return err
 
             if tipo == 'fisico':
-                peso = request.POST.get('peso', '0')
-                stock_fisico = int(request.POST.get('stock_fisico', 0))
                 PhysicalProduct.objects.create(
-                    nombre=nombre,
-                    sku=sku,
-                    descripcion=descripcion,
-                    categoria=categoria,
-                    precio=precio_dec,
-                    imagen_url=imagen_url,
-                    peso=Decimal(str(peso)),
-                    stock_fisico=stock_fisico,
+                    nombre=datos['nombre'], sku=datos['sku'],
+                    descripcion=datos['descripcion'], categoria=datos['categoria'],
+                    precio=datos['precio'], imagen_url=datos['imagen_url'],
+                    peso=Decimal(str(request.POST.get('peso', '0'))),
+                    stock_fisico=int(request.POST.get('stock_fisico', 0)),
                 )
-                messages.success(request, f'Producto físico {nombre} creado')
+                messages.success(request, f'Producto físico {datos["nombre"]} creado')
             else:
-                clave_encriptada = request.POST.get('clave_encriptada', '').strip()
-                plataforma = request.POST.get('plataforma', '').strip()
-                duracion_dias = int(request.POST.get('duracion_dias', 365))
                 DigitalLicense.objects.create(
-                    nombre=nombre,
-                    sku=sku,
-                    descripcion=descripcion,
-                    categoria=categoria,
-                    precio=precio_dec,
-                    imagen_url=imagen_url,
-                    clave_encriptada=clave_encriptada,
-                    plataforma=plataforma,
-                    duracion_dias=duracion_dias,
+                    nombre=datos['nombre'], sku=datos['sku'],
+                    descripcion=datos['descripcion'], categoria=datos['categoria'],
+                    precio=datos['precio'], imagen_url=datos['imagen_url'],
+                    clave_encriptada=request.POST.get('clave_encriptada', '').strip(),
+                    plataforma=request.POST.get('plataforma', '').strip(),
+                    duracion_dias=int(request.POST.get('duracion_dias', 365)),
                     estado_licencia=LicenseState.DISPONIBLE,
                 )
-                messages.success(request, f'Licencia {nombre} creada')
+                messages.success(request, f'Licencia {datos["nombre"]} creada')
 
             return redirect('admin_dashboard')
 

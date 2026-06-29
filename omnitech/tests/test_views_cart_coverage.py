@@ -4,43 +4,7 @@ from decimal import Decimal
 import pytest
 from django.urls import reverse
 
-from omnitech.models import (
-    DigitalLicense,
-    LicenseState,
-    Order,
-    OrderState,
-    PhysicalProduct,
-    ProductState,
-)
-from omnitech.factories import ProductFactory
-
-
-@pytest.fixture
-def physical_product(db):
-    return PhysicalProduct.objects.create(
-        nombre='Notebook Pro',
-        descripcion='Equipo de alto rendimiento',
-        precio=Decimal('120000.00'),
-        sku='NB-001',
-        categoria='Hardware',
-        peso=Decimal('2.50'),
-        stock_fisico=10,
-        stock_reservado=0,
-    )
-
-
-@pytest.fixture
-def digital_license(db):
-    return DigitalLicense.objects.create(
-        nombre='Antivirus Pro',
-        descripcion='Licencia anual',
-        precio=Decimal('20000.00'),
-        sku='AV-001',
-        categoria='Software',
-        clave_encriptada='gAAAAABnZmFkZQ==',
-        plataforma='Windows',
-        duracion_dias=365,
-    )
+from omnitech.models import Order, OrderState
 
 
 @pytest.mark.django_db
