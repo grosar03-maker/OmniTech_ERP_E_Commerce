@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 
-from omnitech.models import DigitalLicense, LicenseState, PhysicalProduct, ProductState
+from omnitech.models import DigitalLicense, PhysicalProduct, ProductState
 
 
 @pytest.mark.django_db
@@ -41,8 +41,14 @@ class TestEditarProducto:
         client.login(username='staffuser', password='staffpass123')
         response = client.post(
             reverse('editar_producto', args=[physical_product.id, 'fisico']),
-            {'nombre': 'Updated', 'sku': 'NB-001', 'precio': '150000',
-             'categoria': 'Hardware', 'peso': '3.0', 'stock_fisico': '5'},
+            {
+                'nombre': 'Updated',
+                'sku': 'NB-001',
+                'precio': '150000',
+                'categoria': 'Hardware',
+                'peso': '3.0',
+                'stock_fisico': '5',
+            },
         )
         assert response.status_code == 302
         physical_product.refresh_from_db()
@@ -52,8 +58,14 @@ class TestEditarProducto:
         client.login(username='staffuser', password='staffpass123')
         response = client.post(
             reverse('editar_producto', args=[digital_license.id, 'software']),
-            {'nombre': 'Lic Updated', 'sku': 'AV-001', 'precio': '25000',
-             'categoria': 'Software', 'plataforma': 'Mac', 'duracion_dias': '180'},
+            {
+                'nombre': 'Lic Updated',
+                'sku': 'AV-001',
+                'precio': '25000',
+                'categoria': 'Software',
+                'plataforma': 'Mac',
+                'duracion_dias': '180',
+            },
         )
         assert response.status_code == 302
         digital_license.refresh_from_db()
@@ -71,9 +83,15 @@ class TestEditarProducto:
         client.login(username='staffuser', password='staffpass123')
         response = client.post(
             reverse('editar_producto', args=[digital_license.id, 'software']),
-            {'nombre': 'Lic', 'sku': 'AV-001', 'precio': '25000',
-             'categoria': 'Software', 'plataforma': 'Mac', 'duracion_dias': '180',
-             'claves_adicionales': ['NEW-KEY-001', 'NEW-KEY-002']},
+            {
+                'nombre': 'Lic',
+                'sku': 'AV-001',
+                'precio': '25000',
+                'categoria': 'Software',
+                'plataforma': 'Mac',
+                'duracion_dias': '180',
+                'claves_adicionales': ['NEW-KEY-001', 'NEW-KEY-002'],
+            },
         )
         assert response.status_code == 302
         assert DigitalLicense.objects.filter(sku='AV-001-001').exists()
@@ -99,8 +117,14 @@ class TestAgregarProducto:
         client.login(username='staffuser', password='staffpass123')
         response = client.post(
             reverse('agregar_producto', args=['fisico']),
-            {'nombre': 'New Product', 'sku': 'NEW-001', 'precio': '50000',
-             'categoria': 'Hardware', 'peso': '1.0', 'stock_fisico': '20'},
+            {
+                'nombre': 'New Product',
+                'sku': 'NEW-001',
+                'precio': '50000',
+                'categoria': 'Hardware',
+                'peso': '1.0',
+                'stock_fisico': '20',
+            },
         )
         assert response.status_code == 302
         assert PhysicalProduct.objects.filter(sku='NEW-001').exists()
@@ -109,9 +133,15 @@ class TestAgregarProducto:
         client.login(username='staffuser', password='staffpass123')
         response = client.post(
             reverse('agregar_producto', args=['software']),
-            {'nombre': 'New License', 'sku': 'LIC-001', 'precio': '30000',
-             'categoria': 'Software', 'clave_encriptada': 'TEST-KEY',
-             'plataforma': 'Windows', 'duracion_dias': '365'},
+            {
+                'nombre': 'New License',
+                'sku': 'LIC-001',
+                'precio': '30000',
+                'categoria': 'Software',
+                'clave_encriptada': 'TEST-KEY',
+                'plataforma': 'Windows',
+                'duracion_dias': '365',
+            },
         )
         assert response.status_code == 302
         assert DigitalLicense.objects.filter(sku='LIC-001').exists()

@@ -31,7 +31,8 @@ class TestCrearCheckoutSession:
 
         items = [{'nombre': 'Notebook Pro', 'tipo': 'fisico', 'precio': 120000, 'cantidad': 2}]
         session = crear_checkout_session(
-            order, items,
+            order,
+            items,
             'http://testserver/success/',
             'http://testserver/cancel/',
         )
@@ -50,7 +51,8 @@ class TestCrearCheckoutSession:
 
         items = [{'nombre': 'Antivirus', 'tipo': 'software', 'precio': 200, 'cantidad': 1}]
         session = crear_checkout_session(
-            order, items,
+            order,
+            items,
             'http://testserver/success/',
             'http://testserver/cancel/',
         )
@@ -70,7 +72,8 @@ class TestCrearCheckoutSession:
         order.costo_envio = Decimal('5000')
         items = [{'nombre': 'Monitor', 'tipo': 'fisico', 'precio': 150000, 'cantidad': 1}]
         session = crear_checkout_session(
-            order, items,
+            order,
+            items,
             'http://testserver/success/',
             'http://testserver/cancel/',
         )

@@ -19,38 +19,63 @@ class TestRegistro:
         assert response.status_code == 302
 
     def test_registro_password_mismatch(self, client):
-        response = client.post(reverse('registro'), {
-            'username': 'newuser', 'email': 'new@test.com',
-            'password': 'testpass123', 'password2': 'different',
-        })
+        response = client.post(
+            reverse('registro'),
+            {
+                'username': 'newuser',
+                'email': 'new@test.com',
+                'password': 'testpass123',
+                'password2': 'different',
+            },
+        )
         assert response.status_code == 302
 
     def test_registro_password_too_short(self, client):
-        response = client.post(reverse('registro'), {
-            'username': 'newuser', 'email': 'new@test.com',
-            'password': 'short', 'password2': 'short',
-        })
+        response = client.post(
+            reverse('registro'),
+            {
+                'username': 'newuser',
+                'email': 'new@test.com',
+                'password': 'short',
+                'password2': 'short',
+            },
+        )
         assert response.status_code == 302
 
     def test_registro_duplicate_username(self, client, user):
-        response = client.post(reverse('registro'), {
-            'username': 'testuser', 'email': 'other@test.com',
-            'password': 'testpass123', 'password2': 'testpass123',
-        })
+        response = client.post(
+            reverse('registro'),
+            {
+                'username': 'testuser',
+                'email': 'other@test.com',
+                'password': 'testpass123',
+                'password2': 'testpass123',
+            },
+        )
         assert response.status_code == 302
 
     def test_registro_duplicate_email(self, client, user):
-        response = client.post(reverse('registro'), {
-            'username': 'otheruser', 'email': 'test@example.com',
-            'password': 'testpass123', 'password2': 'testpass123',
-        })
+        response = client.post(
+            reverse('registro'),
+            {
+                'username': 'otheruser',
+                'email': 'test@example.com',
+                'password': 'testpass123',
+                'password2': 'testpass123',
+            },
+        )
         assert response.status_code == 302
 
     def test_registro_success_redirects_home(self, client):
-        response = client.post(reverse('registro'), {
-            'username': 'newuser', 'email': 'new@test.com',
-            'password': 'testpass123', 'password2': 'testpass123',
-        })
+        response = client.post(
+            reverse('registro'),
+            {
+                'username': 'newuser',
+                'email': 'new@test.com',
+                'password': 'testpass123',
+                'password2': 'testpass123',
+            },
+        )
         assert response.status_code == 302
         assert User.objects.filter(username='newuser').exists()
 

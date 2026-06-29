@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 from django.urls import reverse
 
-from omnitech.models import DigitalLicense, LicenseState, Order, OrderState
+from omnitech.models import DigitalLicense, LicenseState, Order
 
 
 @pytest.mark.django_db
@@ -15,6 +15,7 @@ class TestDetallePedido:
 
     def test_detalle_pedido_authenticated_not_owner(self, client, order):
         from django.contrib.auth.models import User
+
         User.objects.create_user(username='other', password='testpass123')
         client.login(username='other', password='testpass123')
         response = client.get(reverse('detalle_pedido', args=['OT-TEST-01']))
@@ -25,7 +26,7 @@ class TestDetallePedido:
         assert response.status_code == 302
 
     def test_detalle_pedido_anonymous_guest_order(self, client):
-        guest_order = Order.objects.create(
+        Order.objects.create(
             numero_pedido='OT-GUEST-01',
             subtotal=Decimal('50000'),
             total=Decimal('50000'),
@@ -76,10 +77,15 @@ class TestMisLicencias:
     def test_mis_licencias_with_licenses(self, client, user, order):
         client.login(username='testuser', password='testpass123')
         DigitalLicense.objects.create(
-            nombre='License 1', precio=Decimal('10000'), sku='LIC-001',
-            categoria='Software', clave_encriptada='key1',
-            plataforma='Windows', duracion_dias=365,
-            orden_compra=order, estado_licencia=LicenseState.CONSUMIDA,
+            nombre='License 1',
+            precio=Decimal('10000'),
+            sku='LIC-001',
+            categoria='Software',
+            clave_encriptada='key1',
+            plataforma='Windows',
+            duracion_dias=365,
+            orden_compra=order,
+            estado_licencia=LicenseState.CONSUMIDA,
         )
         response = client.get(reverse('mis_licencias'))
         assert response.status_code == 200
@@ -93,6 +99,7 @@ class TestPerfil:
 
     def test_perfil_with_existing_profile(self, client, user):
         from omnitech.models import UserProfile
+
         UserProfile.objects.create(user=user, region='Metropolitana')
         client.login(username='testuser', password='testpass123')
         response = client.get(reverse('perfil'))

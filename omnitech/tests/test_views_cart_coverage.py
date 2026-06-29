@@ -72,10 +72,15 @@ class TestVerCarrito:
 
     def test_ver_carrito_with_items(self, client, physical_product):
         session = client.session
-        session['carrito'] = [{
-            'producto_id': physical_product.id, 'tipo': 'fisico',
-            'nombre': 'Notebook Pro', 'precio': 120000, 'cantidad': 2,
-        }]
+        session['carrito'] = [
+            {
+                'producto_id': physical_product.id,
+                'tipo': 'fisico',
+                'nombre': 'Notebook Pro',
+                'precio': 120000,
+                'cantidad': 2,
+            }
+        ]
         session.save()
         response = client.get(reverse('ver_carrito'))
         assert response.status_code == 200
@@ -90,10 +95,15 @@ class TestCheckout:
     def test_checkout_get_with_items(self, client, physical_product, settings):
         settings.SUBSIDIO_MONTO = 100000
         session = client.session
-        session['carrito'] = [{
-            'producto_id': physical_product.id, 'tipo': 'fisico',
-            'nombre': 'Notebook Pro', 'precio': 120000, 'cantidad': 2,
-        }]
+        session['carrito'] = [
+            {
+                'producto_id': physical_product.id,
+                'tipo': 'fisico',
+                'nombre': 'Notebook Pro',
+                'precio': 120000,
+                'cantidad': 2,
+            }
+        ]
         session.save()
         response = client.get(reverse('checkout'))
         assert response.status_code == 200
@@ -102,10 +112,15 @@ class TestCheckout:
         settings.SUBSIDIO_MONTO = 100000
         settings.STRIPE_PUBLIC_KEY = 'pk_test'
         session = client.session
-        session['carrito'] = [{
-            'producto_id': physical_product.id, 'tipo': 'fisico',
-            'nombre': 'Notebook Pro', 'precio': 120000, 'cantidad': 2,
-        }]
+        session['carrito'] = [
+            {
+                'producto_id': physical_product.id,
+                'tipo': 'fisico',
+                'nombre': 'Notebook Pro',
+                'precio': 120000,
+                'cantidad': 2,
+            }
+        ]
         session.save()
 
         class FakeSession:
@@ -115,18 +130,27 @@ class TestCheckout:
             'omnitech.views_cart.crear_checkout_session',
             lambda *a, **kw: FakeSession(),
         )
-        response = client.post(reverse('checkout'), {
-            'email': 'buyer@test.com', 'region': 'Metropolitana',
-        })
+        response = client.post(
+            reverse('checkout'),
+            {
+                'email': 'buyer@test.com',
+                'region': 'Metropolitana',
+            },
+        )
         assert response.status_code == 302
 
     def test_checkout_post_missing_email(self, client, physical_product, settings):
         settings.SUBSIDIO_MONTO = 100000
         session = client.session
-        session['carrito'] = [{
-            'producto_id': physical_product.id, 'tipo': 'fisico',
-            'nombre': 'Notebook Pro', 'precio': 120000, 'cantidad': 2,
-        }]
+        session['carrito'] = [
+            {
+                'producto_id': physical_product.id,
+                'tipo': 'fisico',
+                'nombre': 'Notebook Pro',
+                'precio': 120000,
+                'cantidad': 2,
+            }
+        ]
         session.save()
         response = client.post(reverse('checkout'), {'email': '', 'region': ''})
         assert response.status_code == 302
@@ -143,17 +167,23 @@ class TestPagoExitoso:
         assert response.status_code == 302
 
     def test_pago_exitoso_with_order(self, client, user, physical_product):
-        order = Order.objects.create(
+        Order.objects.create(
             numero_pedido='OT-SUCCESS-01',
-            usuario=user, subtotal=Decimal('120000'), total=Decimal('120000'),
+            usuario=user,
+            subtotal=Decimal('120000'),
+            total=Decimal('120000'),
             estado=OrderState.PENDIENTE_PAGO,
         )
         session = client.session
         session['order_id'] = 'OT-SUCCESS-01'
-        session['carrito_temp'] = [{
-            'producto_id': physical_product.id, 'tipo': 'fisico',
-            'precio': 120000, 'cantidad': 1,
-        }]
+        session['carrito_temp'] = [
+            {
+                'producto_id': physical_product.id,
+                'tipo': 'fisico',
+                'precio': 120000,
+                'cantidad': 1,
+            }
+        ]
         session.save()
 
         response = client.get(reverse('pago_exitoso'), {'session_id': 'cs_test_123'})

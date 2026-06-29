@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 def _json_post(view_func):
     """Decorator: requiere POST, parsea JSON body y captura excepciones."""
+
     @require_POST
     @functools.wraps(view_func)
     def wrapper(request, *args, **kwargs):
@@ -32,6 +33,7 @@ def _json_post(view_func):
             return view_func(request, data, *args, **kwargs)
         except (KeyError, TypeError, ValueError) as e:
             return JsonResponse({'success': False, 'error': str(e)})
+
     return functools.update_wrapper(wrapper, view_func)
 
 
@@ -200,9 +202,7 @@ def eliminar_del_carrito(request, data):
     tipo = data.get('tipo')
 
     carrito = CartService.get_carrito(request)
-    carrito = [
-        item for item in carrito if not (item.get('producto_id') == producto_id and item.get('tipo') == tipo)
-    ]
+    carrito = [item for item in carrito if not (item.get('producto_id') == producto_id and item.get('tipo') == tipo)]
 
     return _json_carrito_response(request, carrito)
 

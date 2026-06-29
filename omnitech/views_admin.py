@@ -137,18 +137,24 @@ def agregar_producto(request, tipo):
 
             if tipo == 'fisico':
                 PhysicalProduct.objects.create(
-                    nombre=datos['nombre'], sku=datos['sku'],
-                    descripcion=datos['descripcion'], categoria=datos['categoria'],
-                    precio=datos['precio'], imagen_url=datos['imagen_url'],
+                    nombre=datos['nombre'],
+                    sku=datos['sku'],
+                    descripcion=datos['descripcion'],
+                    categoria=datos['categoria'],
+                    precio=datos['precio'],
+                    imagen_url=datos['imagen_url'],
                     peso=Decimal(str(request.POST.get('peso', '0'))),
                     stock_fisico=int(request.POST.get('stock_fisico', 0)),
                 )
                 messages.success(request, f'Producto físico {datos["nombre"]} creado')
             else:
                 DigitalLicense.objects.create(
-                    nombre=datos['nombre'], sku=datos['sku'],
-                    descripcion=datos['descripcion'], categoria=datos['categoria'],
-                    precio=datos['precio'], imagen_url=datos['imagen_url'],
+                    nombre=datos['nombre'],
+                    sku=datos['sku'],
+                    descripcion=datos['descripcion'],
+                    categoria=datos['categoria'],
+                    precio=datos['precio'],
+                    imagen_url=datos['imagen_url'],
                     clave_encriptada=request.POST.get('clave_encriptada', '').strip(),
                     plataforma=request.POST.get('plataforma', '').strip(),
                     duracion_dias=int(request.POST.get('duracion_dias', 365)),

@@ -133,7 +133,9 @@ class TestDomainModelsCoverage:
         assert license_item.subtotal == digital_license.precio
 
     def test_order_total_and_type_helpers(self, order, physical_product, digital_license):
-        OrderItem.objects.create(pedido=order, producto_fisico=physical_product, cantidad=1, precio_unitario=Decimal('1'))
+        OrderItem.objects.create(
+            pedido=order, producto_fisico=physical_product, cantidad=1, precio_unitario=Decimal('1')
+        )
         OrderItem.objects.create(pedido=order, licencia=digital_license, cantidad=1, precio_unitario=Decimal('1'))
 
         assert order.tiene_hardware() is True
@@ -145,7 +147,9 @@ class TestDomainModelsCoverage:
     def test_user_profile_helpers(self, user):
         profile = UserProfile.objects.create(user=user, region='La Araucania')
         Order.objects.create(numero_pedido='OT-DONE', usuario=user, estado=OrderState.COMPLETADO, total=Decimal('1500'))
-        Order.objects.create(numero_pedido='OT-PENDING', usuario=user, estado=OrderState.PENDIENTE_PAGO, total=Decimal('999'))
+        Order.objects.create(
+            numero_pedido='OT-PENDING', usuario=user, estado=OrderState.PENDIENTE_PAGO, total=Decimal('999')
+        )
 
         assert profile.es_de_araucania is False
         assert profile.calcular_total_compras() == Decimal('1500')
@@ -239,7 +243,9 @@ class TestServicesCoverage:
         ]
         assert OrderService.calcular_costo_envio(carrito, 'Metropolitana') == Decimal('1250.0')
         assert OrderService.calcular_costo_envio(carrito, 'La Araucania') == Decimal('0')
-        assert OrderService.calcular_costo_envio([{'tipo': 'software', 'precio': 1000, 'cantidad': 1}], '') == Decimal('0')
+        assert OrderService.calcular_costo_envio([{'tipo': 'software', 'precio': 1000, 'cantidad': 1}], '') == Decimal(
+            '0'
+        )
 
     def test_order_service_crear_pedido(self, user):
         order = OrderService.crear_pedido(user, '', 'Metropolitana', 'Sin observaciones', Decimal('1500'))
@@ -286,7 +292,9 @@ class TestServicesCoverage:
         assert error == 'Pedido ya procesado o cancelado'
 
     def test_email_services_with_monkeypatched_send_mail(self, monkeypatch, order, user, physical_product):
-        OrderItem.objects.create(pedido=order, producto_fisico=physical_product, cantidad=1, precio_unitario=physical_product.precio)
+        OrderItem.objects.create(
+            pedido=order, producto_fisico=physical_product, cantidad=1, precio_unitario=physical_product.precio
+        )
         calls = []
 
         def fake_send_mail(**kwargs):

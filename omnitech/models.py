@@ -17,7 +17,9 @@ from django.db import models
 def _get_fernet():
     import base64
     import hashlib
+
     from cryptography.fernet import Fernet
+
     key = base64.urlsafe_b64encode(hashlib.sha256(settings.SECRET_KEY.encode()).digest())
     return Fernet(key)
 
