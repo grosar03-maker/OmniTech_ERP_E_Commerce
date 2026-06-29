@@ -30,7 +30,7 @@ def _json_post(view_func):
         try:
             data = json.loads(request.body)
             return view_func(request, data, *args, **kwargs)
-        except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
+        except (KeyError, TypeError, ValueError) as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return functools.update_wrapper(wrapper, view_func)
 
@@ -114,6 +114,13 @@ def detalle_producto(request, tipo, producto_id):
     return render(request, 'detalle_producto.html', context)
 
 
+def _buscar_en_carrito(carrito, producto_id, tipo):
+    for i, item in enumerate(carrito):
+        if item.get('producto_id') == producto_id and item.get('tipo') == tipo:
+            return i, item
+    return None, None
+
+
 def _json_carrito_response(request, carrito, **extra):
     CartService.save_carrito(request, carrito)
     totales = CartService.calcular_totales(carrito)
@@ -137,14 +144,9 @@ def agregar_al_carrito(request, data):
 
     carrito = CartService.get_carrito(request)
 
-    item_existente = None
-    for i, item in enumerate(carrito):
-        if item.get('producto_id') == producto_id and item.get('tipo') == tipo:
-            item_existente = i
-            break
-
-    if item_existente is not None:
-        carrito[item_existente]['cantidad'] += cantidad
+    idx, _ = _buscar_en_carrito(carrito, producto_id, tipo)
+    if idx is not None:
+        carrito[idx]['cantidad'] += cantidad
     else:
         carrito.append(
             {
@@ -173,21 +175,22 @@ def actualizar_carrito(request, data):
     producto_id = data.get('producto_id')
     tipo = data.get('tipo')
     cantidad = int(data.get('cantidad', 1))
-
     carrito = CartService.get_carrito(request)
 
-    for item in carrito:
-        if item.get('producto_id') == producto_id and item.get('tipo') == tipo:
-            if cantidad <= 0:
-                carrito.remove(item)
-            else:
-                if cantidad > 0 and ProductFactory.es_tipo_fisico(tipo):
-                    producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
-                    if producto.stock_disponible < cantidad:
-                        return JsonResponse({'success': False, 'error': 'Stock insuficiente'})
-                item['cantidad'] = cantidad
-            break
+    _, item = _buscar_en_carrito(carrito, producto_id, tipo)
+    if not item:
+        return _json_carrito_response(request, carrito)
 
+    if cantidad <= 0:
+        carrito.remove(item)
+        return _json_carrito_response(request, carrito)
+
+    if ProductFactory.es_tipo_fisico(tipo):
+        producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
+        if producto.stock_disponible < cantidad:
+            return JsonResponse({'success': False, 'error': 'Stock insuficiente'})
+
+    item['cantidad'] = cantidad
     return _json_carrito_response(request, carrito)
 
 
