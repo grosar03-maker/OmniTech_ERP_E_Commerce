@@ -14,7 +14,7 @@ from .factories import ProductFactory
 from .models import DigitalLicense, LicenseState, PhysicalProduct, ProductState
 
 
-@staff_member_required
+@staff_member_required(login_url='/login/')
 def dashboard(request):
     productos_fisicos = PhysicalProduct.objects.all().order_by('-fecha_creacion')
     licencias = DigitalLicense.objects.all().order_by('-fecha_creacion')
@@ -29,7 +29,7 @@ def dashboard(request):
     return render(request, 'admin_dashboard.html', context)
 
 
-@staff_member_required
+@staff_member_required(login_url='/login/')
 def editar_producto(request, producto_id, tipo):
     producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
 
@@ -103,7 +103,7 @@ def editar_producto(request, producto_id, tipo):
     return render(request, 'admin_producto_form.html', context)
 
 
-@staff_member_required
+@staff_member_required(login_url='/login/')
 def agregar_producto(request, tipo):
     if request.method == 'POST':
         try:
@@ -165,7 +165,7 @@ def agregar_producto(request, tipo):
     return render(request, 'admin_producto_form.html', context)
 
 
-@staff_member_required
+@staff_member_required(login_url='/login/')
 def toggle_estado(request, producto_id, tipo):
     try:
         producto = ProductFactory.obtener_producto(tipo, producto_id)
@@ -181,7 +181,7 @@ def toggle_estado(request, producto_id, tipo):
     return redirect('admin_dashboard')
 
 
-@staff_member_required
+@staff_member_required(login_url='/login/')
 def eliminar_producto(request, producto_id, tipo):
     try:
         producto = ProductFactory.obtener_producto_o_404(tipo, producto_id)
